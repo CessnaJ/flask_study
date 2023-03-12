@@ -27,16 +27,15 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # Chrome 드라이버 서비스 객체 생성
 chrome_service = webdriver.chrome.service.Service(ChromeDriverManager().install())
-
 # Chrome 웹 드라이버 생성
-# driver = webdriver.Chrome(service=chrome_service)
 driver = webdriver.Chrome()
+
+# driver = webdriver.Chrome(service=chrome_service)
 # chromedriver = '/Users/datakim/workspace/selenium_learning/chromedriver' # 크롬드라이버의 경로를 써줘야 그걸 불러와서 씀. 절대경로 쓰는게 편하다. 컴퓨터마다 다르니까 경로 찾아보고 적용
 # driver = webdriver.Chrome(chromedriver) 
 
 # driver_path = ChromeDriverManager().install()
 # driver = webdriver.Chrome(driver_path) # 크롬 경로 받아오는걸 자동으로 해주는 라이브러리 설치 후 적용.
-# 포스팅 작성 당시 크롬 버젼 : 92
 # 20230309 크롬버전 - 110.0.5481.178
 
 
@@ -68,11 +67,6 @@ def keyword_removing_parenthesis(idx, spotname):
     '''
     키워드만 받아서 spotname(동네)안에 있는 장소 정보를 받아서 "spotname 동네"로 바꿔주는 함수.(이후 띄어쓰기를 %20으로 싹 바꿈)
     '''
-    # if bf_df.loc[idx, 'streetAddr']:
-    #     spotname = bf_df.loc[idx, 'streetAddr']+'%20'+spotname
-    # else:
-    #     spotname = '대전'+'%20'+spotname
-
     if bf_df.loc[idx, 'streetAddr'] and not pd.isna(bf_df.loc[idx, 'streetAddr']):
         spotname = bf_df.loc[idx, 'streetAddr']+'%20'+spotname
     else:
@@ -91,10 +85,12 @@ def keyword_removing_parenthesis(idx, spotname):
 
 # 본격적으로 가게 상세페이지의 URL을 가져오자.
 # 결과값이 있다
-# 
-with open('fetching_cid_sid_title.csv', 'w', encoding='utf-8', newline='') as new_csv:
+with open('fetching_cid_sid_title.csv', 'a', encoding='utf-8', newline='') as new_csv:
 
     for idx, keyword in enumerate(bf_df[search_keyword].tolist()):
+        if idx <= 1405:
+            continue
+
         print("이번에 찾을 키워드 :", idx, f"/ {bf_df.shape[0] -1} 행", keyword)
         writer = csv.writer(new_csv)
         try:
@@ -167,7 +163,6 @@ with open('fetching_cid_sid_title.csv', 'w', encoding='utf-8', newline='') as ne
 
 
 driver.quit()
-
 
 # 이때 수집한 것은 완전한 URL이 아니라 URL에 들어갈 ID (data-cid 라는 코드명으로 저장된) 이므로, 온전한 URL로 만들어줍니다
 
