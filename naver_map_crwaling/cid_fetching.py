@@ -88,7 +88,7 @@ def keyword_removing_parenthesis(idx, spotname):
 with open('fetching_cid_sid_title.csv', 'a', encoding='utf-8', newline='') as new_csv:
 
     for idx, keyword in enumerate(bf_df[search_keyword].tolist()):
-        if idx <= 1405:
+        if idx <= 2160:
             continue
 
         print("이번에 찾을 키워드 :", idx, f"/ {bf_df.shape[0] -1} 행", keyword)
