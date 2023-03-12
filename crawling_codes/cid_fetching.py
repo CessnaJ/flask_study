@@ -7,7 +7,8 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 import time
-
+import pandas
+import re
 
 chromedriver = '/Users/datakim/workspace/selenium_learning/chromedriver' 
 driver = webdriver.Chrome(chromedriver) 

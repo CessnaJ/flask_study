@@ -1,7 +1,7 @@
 import pandas as pd
 
 # CSV 파일 경로와 파일 이름 지정
-csv_file = 'modified_data.csv'
+csv_file = 'address_zipcode_added2.csv'
 
 # CSV 파일을 DataFrame 객체로 불러오기
 df = pd.read_csv(csv_file, encoding='utf-8')
