@@ -1,6 +1,7 @@
 # 안나오는거 걸러주는건 마지막에 일괄로 한다.
 import requests
 import csv
+import json
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -10,6 +11,8 @@ from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
+
+from bs4 import BeautifulSoup 
 
 import pandas as pd
 import numpy as np
@@ -49,20 +52,44 @@ bf_df['naver_place_title'] = ""#!
 bf_df['card_review_json'] = ""#
 
 
-def to_search_iframe(driver:WebDriver):
+def getting_rating_count(html_soup):
+    if html_soup is None:
+        return "no_html"
+    
+    # 😀 여기 에러
+    soup = BeautifulSoup(html_soup, 'html.parser')
+    rating_spans = soup.find_all('span', {'class': 'm7jAR'})
+    print(*rating_spans, sep='\n\n')
+    ratings = []
+    for span in rating_spans:
+        rating_text = span.contents[-1].strip()  # "(424명 참여)"
+        rating = rating_text.split()[0]  # "424"
+        ratings.append(rating)
+    return ratings
+
+
+def to_search_iframe(driver):
     driver.switch_to.default_content() # 기본 프레임으로 일단 커서 옮기기. - 추후 iframe전환
-    driver.switch_to.frame('searchIframe')
+    # driver.switch_to.frame('searchIframe')
     # 경로 맞는지 확인 필요.
-    frame_in = driver.find_element(By.XPATH, '/html/body/app/layout/div[3]/div[2]/shrinkable-layout/div/app-base/search-layout/div[2]/entry-layout/entry-place-bridge/div/nm-external-frame-bridge/nm-iframe/iframe')
-    driver.switch_to.frame(frame_in)
+    # frame_in = driver.find_element(By.XPATH, '/html/body/app/layout/div[3]/div[2]/shrinkable-layout/div/app-base/search-layout/div[2]/entry-layout/entry-place-bridge/div/nm-external-frame-bridge/nm-iframe/iframe')
+    print('이제 프레임으로 들어가!')
+    # frame_in = driver.find_element(By.XPATH, '//*[@id="_title"]/span[1]')
+    print(1)
+    # driver.switch_to.frame(frame_in)
+    driver.switch_to.frame('entryIframe')
+    print(2)
 
 
 def element_content_as_dict(li_elements):
     reviews = []  # 리뷰를 저장할 리스트 초기화
     for li_element in li_elements:
-        review_text = li_element.find_element_by_css_selector("span.nWiXa").text  # 리뷰 텍스트 추출
-        review_count = int(li_element.find_element_by_css_selector("span.TwM9q").text)  # 리뷰 카운트 추출
-        review_dict = {review_text: review_count}  # 리뷰와 카운트를 딕셔너리로 저장
+        review_text = li_element.find_element(By.CSS_SELECTOR, "span.nWiXa").text  # 리뷰 텍스트 추출
+        decoded_review = bytes(review_text, 'utf-8').decode('unicode_escape')
+        korean_str = decoded_review.encode('utf-8').decode('unicode_escape')
+        review_count = int(''.join(filter(str.isdigit, li_element.find_element(By.CSS_SELECTOR, "span.TwM9q").text)))  # 리뷰 카운트 추출
+        
+        review_dict = {decoded_review: review_count}  # 리뷰와 카운트를 딕셔너리로 저장
         reviews.append(review_dict)  # 딕셔너리를 리스트에 추가
 
     json_reviews = json.dumps(reviews)  # 리스트를 json 형태로 변환
@@ -82,8 +109,14 @@ def regex_rating_count(text_val):
 # 본격적 실행 시작.
 with open('fetching_rating_data.csv', 'a', encoding='utf-8', newline='') as new_csv:
     for idx, row in bf_df[['sid', 'cid']].iterrows():
-        if idx == 10:
-            break
+        print(f'{idx}번째 {row}으로 시행')
+        # if idx == 10:
+            # break
+        # if idx <= 62: # 62번째부터 이어서 하기.
+            # continue
+
+        if np.isnan(row['sid']): # 비어있으면
+            continue  # 해당 행을 건너뜀
 
         sid = int(row['sid'])
         cid = int(row['cid'])
@@ -107,12 +140,15 @@ with open('fetching_rating_data.csv', 'a', encoding='utf-8', newline='') as new_
         try:
             naver_map_search_url = f"https://map.naver.com/v5/entry/place/{cid}?c=15,0,0,0,dh"
             driver.get(naver_map_search_url)
-            # time.sleep(random.choice([4]))
+            time.sleep(random.choice([3]))
+            to_search_iframe(driver)
             print('0')
-            # //*[@id="_title"]/span[1]
+            
             # 네이버 검색결과 title 따로 저장
             # place_title = driver.find_element(By.CSS_SELECTOR, '#_title > span.Fc1rA').text # 네이버 지도에 등록되어있는 이름 추출
-            wait = WebDriverWait(driver, 10)
+            
+            # wait = WebDriverWait(driver, 10)
+
             # place_title = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="_title"]/span[1]'))).text
             # place_title = driver.find_element(By.XPATH, '//*[@id="_title"]/span[1]').text # 네이버 지도에 등록되어있는 이름 추출
             # place_title = driver.find_element(By.XPATH, '/html/body/div[3]/div/div/div/div[2]/div[1]/div[1]/span[1]').text # 네이버 지도에 등록되어있는 이름 추출
@@ -124,29 +160,54 @@ with open('fetching_rating_data.csv', 'a', encoding='utf-8', newline='') as new_
 
             # 아래 에러 발생 가능. rating이 있는 장소인지? NoSuchElementException
             try:
-                
                 rating = driver.find_element(By.XPATH, '//*[@id="app-root"]/div/div/div/div[2]/div[1]/div[2]/span[1]/em').text # 여기서 rating 추출
                 # rating = driver.find_element(By.CSS_SELECTOR, '#app-root > div > div > div > div.place_section.OP4V8 > div.zD5Nm.f7aZ0 > div.dAsGb > span.PXMot.LXIwF > em').text # 여기서 rating 추출
                 bf_df.loc[idx, 'naver_rating_score'] = rating
+                print('별점 존재')
             except Exception:
                 print(Exception)
                 print('rating점수 받아오는데에서 문제- 네이버 장소 이름만 write하고 넘어갑니다.')
                 bf_df.loc[idx, 'naver_rating_score'] = 'no_rating'
-                bf_df.iloc[[idx]].to_csv(new_csv, header=False, index=False) # rating이 없으니 여기까지만 쓰고 다음 idx로 넘어감.
+                
+                if idx == 0:
+                    bf_df.iloc[[idx]].to_csv(new_csv, header=True, index=False)
+                else:
+                    bf_df.iloc[[idx]].to_csv(new_csv, header=False, index=False) # 1줄씩 csv파일에 쓰는 코드. 예상못한 에러로 인한 허탕 방지.
+                
                 continue
             
-            print('별점 존재')
+            
             # review_tab_click = driver.find_element(By.CSS_SELECTOR, '#ct > div.search_listview._content._ctList > ul > li:nth-child(1) > div > a:nth-child(1)').click() # 클릭
             # review_tab_click = driver.find_element(By.CSS_SELECTOR, '#app-root > div > div > div > div.place_fixed_maintab.place_stuck > div > div > div > div > a span:contains("리뷰")').click() # a태그의 자식인 span이 "리뷰"를 포함한 a태그를 선택.
             review_tab_click = driver.find_element(By.XPATH, '//*[@id="app-root"]/div/div/div/div[5]/div/div/div/div/a[contains(span/text(), "리뷰")]').click() # a태그의 자식인 span이 "리뷰"를 포함한 a태그를 클릭.
+            print('클릭까지 완료')
             time.sleep(1) # 클릭을 해야 나옴.
             
+            # 😀bs 이용해서 다시 시도.
+            print('bs가져올거임.')
+            html_source = driver.page_source
+            # print(html_source)
+            bf_df.loc[idx, 'naver_rating_count'] = getting_rating_count(html_source)
+
             # counting_element = driver.find_element(By.CSS_SELECTOR, "#app-root > div > div > div > div:nth-child(7) > div:nth-child(3) > div.place_section.no_margin.mdJ86 > div > div > div.Xj_yJ > span:nth-child(2)")
-            counting_element = driver.find_element(By.XPATH, '//*[@id="app-root"]/div/div/div/div[7]/div[3]/div[1]/div/div/div[3]/span[2]')
-            val = counting_element.find_element(By.CSS_SELECTOR, "span").text
-            bf_df.loc[idx, 'naver_rating_count'] = regex_rating_count(val) # 몇명이 평가했는지 저장
+            # counting_element = driver.find_element(By.XPATH, '/html/body/div[3]/div/div/div/div[7]/div[3]/div[1]/div/div/div[3]/span[2]')
+            # val = counting_element.find_element(By.CSS_SELECTOR, "span").text
+            # bf_df.loc[idx, 'naver_rating_count'] = regex_rating_count(val) # 몇명이 평가했는지 저장
+            print('몇명인지 저장.')
+            time.sleep(0.1)
             
-            open_reviews = driver.find_element(By.XPATH, '//*[@id="app-root"]/div/div/div/div[7]/div[3]/div[1]/div/div/div[2]/a').click()
+            while True:
+                time.sleep(0.5)
+                try:
+                    open_reviews_button = driver.find_element(By.XPATH, '//*[@id="app-root"]/div/div/div/div[7]/div[3]/div[1]/div/div/div[2]/a')
+                    if open_reviews_button.text == '접기':
+                        break
+                    else:
+                        open_reviews_button.click()
+                        print('창 넓히기 클릭 이벤트')
+                except Exception:
+                    break
+            print(3)
             # li_elements = driver.find_elements(By.CSS_SELECTOR, "#app-root > div > div > div > div:nth-child(7) > div:nth-child(3) > div.place_section.no_margin.mdJ86 > div > div > div.k2tmh > ul > li")  # 모든 li 요소를 찾음
             li_elements = driver.find_elements(By.XPATH, '//*[@id="app-root"]/div/div/div/div[7]/div[3]/div[1]/div/div/div[2]/ul/li')  # 모든 li 요소를 찾음
             

@@ -1,7 +1,7 @@
 import pandas as pd
 
 # CSV 파일 경로와 파일 이름 지정
-csv_file = 'fetching_cid_sid_title.csv'
+csv_file = 'fetching_rating_data.csv'
 
 # CSV 파일을 DataFrame 객체로 불러오기
 df = pd.read_csv(csv_file, encoding='utf-8')
