@@ -49,6 +49,14 @@ bf_df['naver_place_title'] = ""#!
 bf_df['card_review_json'] = ""#
 
 
+def to_search_iframe(driver:WebDriver):
+    driver.switch_to.default_content() # 기본 프레임으로 일단 커서 옮기기. - 추후 iframe전환
+    driver.switch_to.frame('searchIframe')
+    # 경로 맞는지 확인 필요.
+    frame_in = driver.find_element(By.XPATH, '/html/body/app/layout/div[3]/div[2]/shrinkable-layout/div/app-base/search-layout/div[2]/entry-layout/entry-place-bridge/div/nm-external-frame-bridge/nm-iframe/iframe')
+    driver.switch_to.frame(frame_in)
+
+
 def element_content_as_dict(li_elements):
     reviews = []  # 리뷰를 저장할 리스트 초기화
     for li_element in li_elements:
