@@ -59,12 +59,21 @@ def getting_rating_count(html_soup):
     # 😀 여기 에러
     soup = BeautifulSoup(html_soup, 'html.parser')
     rating_spans = soup.find_all('span', {'class': 'm7jAR'})
-    print(*rating_spans, sep='\n\n')
+    # print(type(rating_spans))
+    # print(*rating_spans, sep='\n\n')
+    
     ratings = []
-    for span in rating_spans:
-        rating_text = span.contents[-1].strip()  # "(424명 참여)"
-        rating = rating_text.split()[0]  # "424"
-        ratings.append(rating)
+    for idx, span in enumerate(rating_spans):
+        # print(f'{idx}번 순회합니다.')
+        # print(span)
+        # rating_text = span.contents[-1].strip()  # "(424명 참여)"
+        rating_text = span.get_text()
+        if len(rating_text) <= 4:
+            continue
+        else:
+            rating = rating_text.split()[-2][1:-1]  # "424"
+            # print(f'rating: {rating}')
+            ratings.append(rating)
     return ratings
 
 
@@ -87,7 +96,7 @@ def element_content_as_dict(li_elements):
         review_text = li_element.find_element(By.CSS_SELECTOR, "span.nWiXa").text  # 리뷰 텍스트 추출
         decoded_review = bytes(review_text, 'utf-8').decode('unicode_escape')
         korean_str = decoded_review.encode('utf-8').decode('unicode_escape')
-        review_count = int(''.join(filter(str.isdigit, li_element.find_element(By.CSS_SELECTOR, "span.TwM9q").text)))  # 리뷰 카운트 추출
+        review_count = ''.join(filter(str.isdigit, li_element.find_element(By.CSS_SELECTOR, "span.TwM9q").text))  # 리뷰 카운트 추출
         
         review_dict = {decoded_review: review_count}  # 리뷰와 카운트를 딕셔너리로 저장
         reviews.append(review_dict)  # 딕셔너리를 리스트에 추가
@@ -112,8 +121,8 @@ with open('fetching_rating_data.csv', 'a', encoding='utf-8', newline='') as new_
         print(f'{idx}번째 {row}으로 시행')
         # if idx == 10:
             # break
-        # if idx <= 62: # 62번째부터 이어서 하기.
-            # continue
+        if idx < 1322: # 1322번째부터 이어서 하기.
+            continue
 
         if np.isnan(row['sid']): # 비어있으면
             continue  # 해당 행을 건너뜀
@@ -197,7 +206,7 @@ with open('fetching_rating_data.csv', 'a', encoding='utf-8', newline='') as new_
             time.sleep(0.1)
             
             while True:
-                time.sleep(0.5)
+                time.sleep(1)
                 try:
                     open_reviews_button = driver.find_element(By.XPATH, '//*[@id="app-root"]/div/div/div/div[7]/div[3]/div[1]/div/div/div[2]/a')
                     if open_reviews_button.text == '접기':
