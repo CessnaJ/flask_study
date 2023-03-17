@@ -1,0 +1,76 @@
+// url = 'https://dapi.kakao.com/v2/local/search/address.json?query={}'.format(addr)에 대한 response.
+// https://developers.kakao.com/docs/latest/ko/local/dev-guide 참조.
+
+// 대전광역시 서구 도마동 - 검색결과
+const a = {
+  documents: [
+    {
+      address: {
+        address_name: "대전 서구 도마동",
+        b_code: "3017010300",
+        h_code: "",
+        main_address_no: "",
+        mountain_yn: "N",
+        region_1depth_name: "대전",
+        region_2depth_name: "서구",
+        region_3depth_h_name: "",
+        region_3depth_name: "도마동",
+        sub_address_no: "",
+        x: "127.38115530131",
+        y: "36.3160391986021",
+      },
+      address_name: "대전 서구 도마동",
+      address_type: "REGION",
+      road_address: None,
+      x: "127.38115530131",
+      y: "36.3160391986021",
+    },
+    {
+      address: {
+        address_name: "대전 서구 도마1동",
+        b_code: "",
+        h_code: "3017052000",
+        main_address_no: "",
+        mountain_yn: "N",
+        region_1depth_name: "대전",
+        region_2depth_name: "서구",
+        region_3depth_h_name: "도마1동",
+        region_3depth_name: "",
+        sub_address_no: "",
+        x: "127.37989101987",
+        y: "36.3143490041603",
+      },
+      address_name: "대전 서구 도마1동",
+      address_type: "REGION",
+      road_address: None,
+      x: "127.37989101987",
+      y: "36.3143490041603",
+    },
+    {
+      address: {
+        address_name: "대전 서구 도마2동",
+        b_code: "",
+        h_code: "3017053000",
+        main_address_no: "",
+        mountain_yn: "N",
+        region_1depth_name: "대전",
+        region_2depth_name: "서구",
+        region_3depth_h_name: "도마2동",
+        region_3depth_name: "",
+        sub_address_no: "",
+        x: "127.373585394271",
+        y: "36.31276837931",
+      },
+      address_name: "대전 서구 도마2동",
+      address_type: "REGION",
+      road_address: None,
+      x: "127.373585394271",
+      y: "36.31276837931",
+    },
+  ],
+  meta: {
+    is_end: True,
+    pageable_count: 3,
+    total_count: 3,
+  },
+};
