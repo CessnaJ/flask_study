@@ -52,9 +52,6 @@ bf_df['theme_keyword'] = ""
 bf_df['menu'] = ""
 
 
-
-
-
 def write_csv_by_line(idx, new_csv):#
     if idx == 0:
         bf_df.iloc[[idx]].to_csv(new_csv, header=True, index=False)
@@ -62,14 +59,36 @@ def write_csv_by_line(idx, new_csv):#
         bf_df.iloc[[idx]].to_csv(new_csv, header=False, index=False) # 1줄씩 csv파일에 쓰는 코드. 예상못한 에러로 인한 허탕 방지.
 
 
+def regex_find_tel(text_list):
+    for item in text_list:
+        phone_pattern = re.compile(r'(\d{2,4}-)?(\d{2,4})?-\d{4}') # 전화번호 패턴 찾기
+        match = phone_pattern.search(str(item))
+        if match:
+            phone_number = match.group(0)
+            # print(phone_number)
+            return phone_number
+        
+
+    else: # 다 돌때까지 못찾았다.
+        print("Phone number not found.")
+        return []
+
+
 def fetch_naver_tel(driver):#
     try:
-        tel_el = driver.find_element(By.XPATH, '/html/body/div[3]/div/div/div/div[6]/div/div[1]/div/div/div[3]/div/span[1]')
+        soup = fetching_html_source(driver)
+        
+        div_list = soup.select('#app-root > div > div > div > div:nth-child(6) > div > div.place_section.no_margin.vKA6F > div > div')
+        # print(2)
+        # print(div_list[0])
+        tel_num = regex_find_tel(div_list)
+        print(f'전화번호 추출된것.:{tel_num}')
+        # tel_el = driver.find_element(By.XPATH, '/html/body/div[3]/div/div/div/div[6]/div/div[1]/div/div/div[3]/div/span[1]')
         # /html/body/div[3]/div/div/div/div[6]/div/div[1]/div/div/div[3]/div/span[1]
-        tel_num = tel_el.text
+        # tel_num = tel_el.text
         return tel_num
-    except Exception:
-        print(Exception)
+    except Exception as err:
+        print(err)
         return 'null'
         
 
@@ -86,13 +105,19 @@ def page_down(driver):#
 
 def click_naver_open_hours(driver):#
     try:
-        element = driver.find_element(By.XPATH, '/html/body/div[3]/div/div/div/div[6]/div/div[1]/div/div/div[2]/div/a')
+        # element = driver.find_element(By.XPATH, '/html/body/div[3]/div/div/div/div[6]/div/div[1]/div/div/div[2]/div/a')
+        print('클릭시도')
+        time.sleep(1)
+        element = driver.find_element(By.CSS_SELECTOR, '#app-root > div > div > div > div:nth-child(6) > div > div.place_section.no_margin.vKA6F > div > div > div.O8qbU.pSavy > div > a > div')
+        # element = driver.find_element(By.CLASS_NAME, 'gKP9i.RMgN0')
+
         # /html/body/div[3]/div/div/div/div[6]/div/div[1]/div/div/div[2]/div/a
         element.click()
         print('clicked')
         time.sleep(1)
-    except Exception as e:
-        print(e)
+    except Exception as e1:
+        print('e1')
+        print(e1)
         return 'null'
 
 
@@ -108,10 +133,22 @@ def fetching_html_source(driver):#
 def fetch_naver_open_hours(soup):
     try:
         # CSS 선택자로 자식 div 태그 선택하여 리스트로 저장
-        div_list = soup.select('#app-root > div > div > div > div:nth-child(6) > div > div.place_section.no_margin.vKA6F > div > div > div.O8qbU.pSavy > div > a > div')
+        div_list = soup.select('#app-root > div > div > div > div:nth-child(7) > div > div.place_section.no_margin.vKA6F > div > div > div.O8qbU.pSavy > div > a > div')
+        #app-root > div > div > div > div:nth-child(6) > div > div.place_section.no_margin.vKA6F > div > div > div.O8qbU.pSavy > div > a
+        
+        # print(div_list)
+        arr = []
+        for item in div_list:
+            arr.append(str(item))
+            # print(item)
+            # print(str(item))
         print('got open hours')
-        return str(div_list)
-    except Exception:
+        # print(arr)
+        return str(arr)
+    except Exception as e2:
+        print('open hours 가져오는거에서 에러')
+        print('e2')
+        print(e2)
         return 'null'
 
 
@@ -119,7 +156,9 @@ def fetch_user_reviews(soup):
     try:
         div_list = soup.select('#app-root > div > div > div > div:nth-child(7) > div > div:nth-child(6) > div > div.TraH1 > ul > li')
         return str(div_list)
-    except Exception:
+    except Exception as e3:
+        print('e3')
+        print(e3)
         return 'null'
 
 
@@ -127,7 +166,9 @@ def fetch_menu(soup):
     try:
         div_list = soup.select('#app-root > div > div > div > div:nth-child(7) > div > div:nth-child(3) > div > ul > li')
         return str(div_list)
-    except Exception:
+    except Exception as e4:
+        print('e4')
+        print(e4)
         return 'null'
 
 
@@ -136,7 +177,9 @@ def fetch_theme_keyword(soup):
     try:
         div_list = soup.select('#app-root > div > div > div > div:nth-child(7) > div > div.place_section.I_y6k > div.place_section_content > div > div > ul > li')
         return str(div_list)
-    except Exception:
+    except Exception as e5:
+        print('e5')
+        print(e5)
         return 'null'
 
 
@@ -149,10 +192,11 @@ def to_search_iframe(driver):
 
 
 
-
 # 본격적 실행 시작.
 with open('tel_review_added.csv', 'a', encoding='utf-8', newline='') as new_csv:
     for idx, row in bf_df[['sid', 'cid']].iterrows():
+        if idx < 254: # xlsx에서 257부터 채워나가야하는데, idx < 254로 조건 걸면 딱 맞다.
+            continue
         print(f'{idx}번째 {row}으로 시행')
 
         if np.isnan(row['sid']): # 비어있으면
@@ -177,8 +221,8 @@ with open('tel_review_added.csv', 'a', encoding='utf-8', newline='') as new_csv:
             print('0')
             
             bf_df.loc[idx, 'naver_tel'] = fetch_naver_tel(driver)
-            page_down(driver)
             click_naver_open_hours(driver)
+            page_down(driver)
             soup = fetching_html_source(driver)
             bf_df.loc[idx, 'naver_open_hours'] = fetch_naver_open_hours(soup)
             bf_df.loc[idx, 'user_reviews'] = fetch_user_reviews(soup)
@@ -190,8 +234,8 @@ with open('tel_review_added.csv', 'a', encoding='utf-8', newline='') as new_csv:
             print(error)
 
         
-        if idx == 30:
-            break
+        # if idx == 30:
+            # break
 
 
 driver.quit()
