@@ -195,7 +195,7 @@ def to_search_iframe(driver):
 # 본격적 실행 시작.
 with open('tel_review_added.csv', 'a', encoding='utf-8', newline='') as new_csv:
     for idx, row in bf_df[['sid', 'cid']].iterrows():
-        if idx < 254: # xlsx에서 257부터 채워나가야하는데, idx < 254로 조건 걸면 딱 맞다.
+        if idx < 2390: # xlsx에서 257부터 채워나가야하는데, idx < 254로 조건 걸면 딱 맞다. -> 2248부터= idx < 2245 // 2393부터 idx<2390
             continue
         print(f'{idx}번째 {row}으로 시행')
 
