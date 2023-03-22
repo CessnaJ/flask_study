@@ -28,12 +28,35 @@ spot_matrix = [[1, 0, 0, 0, 0, 0, 0, 0, 1],
     [0, 1, 0, 1, 0, 0, 1, 0, 1],
     ]
 
+# 통합된 matrix가 들어오니까 쪼개고, 분류해서 기능제공. 😀 pk매핑 유지 해야됨.
 def content_based_recom(ref_facility_arr, spot_matrix, category):
-    ref_facility_arr = ref_facility_arr
+    # spot_matrix의 4번째 col이 category정보를 나타냄.
+    cat_col_num = 3
+    # spot_matrix의 cat이 1(카페)인 곳들만 선택
+    
+    spot_df = pd.DataFrame(spot_matrix)
+    # 카테고리의 정보가 일치하는 row만 살린 df
+    cat_filtered_df = spot_df.loc[spot_df.iloc[:, cat_col_num] == category, :]
 
-    # 위에서 형변환이랑 다 되었다고 치고..
+    # facility_df와 coor_df로 나눠서 저장. 😀 숫자 조정 필요.
+    facility_df = cat_filtered_df.iloc[:8, :]
+    coor_df = cat_filtered_df.iloc[8:10, :]
+    matrix_size = len(coor_df)
+    rating_df = cat_filtered_df.iloc[10:, :]
+    
+    # 1차 - 시설 유사도정보 구함. ndArr.
+    facility_scores = facility_cos_sim(ref_facility_arr, facility_df)
 
-
+    # 기준 좌표정보로부터 각 시설의 맨하탄거리를 구한 list
+    ref_facility_coor = ref_facility_arr[9:]
+    manhattan_distances = [manhattan_distance(ref_facility_coor, coor_df[idx]) for idx in range(matrix_size)]
+    
+    # rating_scores = [rating_score(rating_df[idx][0], rating[idx][1]) for idx in range(matrix_size)]
+    rating_scores = [rating_score(*rating) for rating in rating_df]
+    
+    # 각 점수를 0-1사이의 숫자로 치환을 먼저해서 비율을 원하는대로 조절 가능하게 해야함.
+    # 위의 시설유사도, 맨하탄거리, rating_score 반영된걸 취합하면 됨.
+    content_scores = []
 
 
 
@@ -56,7 +79,21 @@ def manhattan_distance(coor_A, coor_B):
     return sum_distance
 
 
+# 시설 유사도 arr로 반환, idx 유지
+def facility_cos_sim(ref_facility_arr, facility_matrix):
+    ref_facility_arr = np.array(ref_facility_arr).reshape(1,-1)
+    res = cosine_similarity(ref_facility_arr, facility_matrix)
+    print(type(res))
+    print(res)
+    return res[0]
 
+
+# 가중치 어떻게 할까?
+def rating_score(avg_score, count):
+    score_weight = 1
+    count_weight = 1
+
+    return avg_score*score_weight + count*count_weight
 
 
 # 시설유사도 - 속도개선1 (field 축소)
@@ -73,37 +110,6 @@ def apply_valid_field(facility_matrix):
     valid_field에서 0으로 날아간 idx를 제거한 matrix 반환
     '''
     pass
-
-
-
-# 시설 유사도 arr로 반환, idx 유지
-def facility_cos_sim(ref_facility_arr, facility_matrix=None):
-    ref_facility_arr = np.array(ref_facility_arr).reshape(1,-1)
-    facility_matrix = [spot1, spot2, spot3, spot4]
-    res = cosine_similarity(ref_facility_arr, facility_matrix)
-    print(res[0])
-    print(type(res))
-
-
-# 1번 방식
-matrix = np.array([user_no1, spot1, spot2, spot3, spot4])
-similarity_matrix = cosine_similarity(matrix)
-result = similarity_matrix[0][1:]
-print(result) # User정보 자기자신을 제외한 유사도.
-# User정보에서 0이 있는걸 굳이 쓸 필요도 없어보인다. 해당 필드를 matrix에서 애초에 제거하고
-# 행렬계산하면 불필요한 계산이 줄어든다.
-
-# 2번 방식
-# 건물 정보를 2차원 배열로 만듦
-matrix = np.array([spot1, spot2, spot3, spot4])
-# 코사인 유사도를 계산
-similarities = cosine_similarity(matrix, [user_no1])
-
-print(similarity_matrix)
-
-# 개선 필요 -> 불필요한 계산이 많다. 사실 matrix[0]만 있어도 됨.
-# 모든 원소끼리의 유사도를 구하는식이 되어버렸다.
-
 '''
 pivot_location = location[0]
 distance = []
@@ -116,11 +122,7 @@ def manhatan_distance(location_a, location_b):
     return lng_subtract_dist + lat_subtract_dist
     
 
-def rating_score(avg_score, count):
-    score_weight = 1
-    count_weight = 1
 
-    return avg_score*score_weight + count*count_weight
 
 
 

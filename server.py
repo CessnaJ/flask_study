@@ -46,7 +46,7 @@ def content_recom(cat_num):
         spot_info_matrix = data['spot_matrix']
         
         # 추천 메인로직 모듈화
-        res = content_based_recom(user_arr, spot_matrix, cat_num)
+        res = content_based_recom(ref_facility_arr, spot_info_matrix, cat_num)
 
         return jsonify(res)
     
