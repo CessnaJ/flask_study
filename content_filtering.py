@@ -10,7 +10,7 @@
 
 from sklearn.metrics.pairwise import cosine_similarity
 from haversine import haversine
-from math import radians
+from math import radians, log10
 
 import numpy as np
 import pandas as pd
@@ -88,12 +88,12 @@ def facility_cos_sim(ref_facility_arr, facility_matrix):
     return res[0]
 
 
-# 가중치 어떻게 할까?
+# 가중치 조절 추후에 진행
 def rating_score(avg_score, count):
     score_weight = 1
     count_weight = 1
 
-    return avg_score*score_weight + count*count_weight
+    return avg_score*score_weight + log10(count)*count_weight
 
 
 # 시설유사도 - 속도개선1 (field 축소)
@@ -110,33 +110,6 @@ def apply_valid_field(facility_matrix):
     valid_field에서 0으로 날아간 idx를 제거한 matrix 반환
     '''
     pass
-'''
-pivot_location = location[0]
-distance = []
 
-#a to b (a가 base)
-def manhatan_distance(location_a, location_b):
-    lng_subtract_from_a = abs(location_b[0] - location_a[0])
-    lat_subtract_from_a = abs(location_a[1] - location_b[1])
-
-    return lng_subtract_dist + lat_subtract_dist
-    
-
-
-
-
-
-for spot_location in locations:
-    distance.append(harversine(pivot_location, spot_location))
-    distance.append(harversine(pivot_location, spot_location))    
-
-
-lyon = (45.7597, 4.8422) # (lat, lon)
-paris = (48.8567, 2.3508)
-
-haversine(lyon, paris)
->> 392.2172595594006  # in kilometers
-
-'''
 
 # weighted_score
