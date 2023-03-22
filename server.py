@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from content_filtering import content_based_recom
+from colab_filtering import colab_filtering
 
 
 
@@ -42,7 +43,7 @@ def content_recom(cat_num):
         data = request.json
         
         # 기준이 되는 arr -> 변수명 추후 수정 😀
-        ref_facility_arr = data['user_arr']
+        ref_facility_arr = data['spotsfs_arr']
         spot_info_matrix = data['spot_matrix']
         
         # 추천 메인로직 모듈화
@@ -59,11 +60,39 @@ def content_recom(cat_num):
 
 
 
+# pk랑 매핑 필요.
+@app.route('/hybrid_filtering_recom/', methods=['POST'])
+def hybrid_filtering():
+    try:
+        topK = 10
+        data = request.json
 
-@app.route('/hybrid_filtering/', methods=['POST'])
-def hybrid_filtering(cat_nums):
-    data = request.json
+        ref_facility_arr = data['user_arr']
+        spot_info_matrix = data['spot_matrix']
 
+        user_rating_arr = data['user_rating_arr']
+        rating_matrix = data['rating_matrix']
+
+        user_like_arr = data['user_like_arr']
+        like_matrix = data['like_matrix']
+
+        content_sim_arr = content_based_recom(ref_facility_arr, spot_info_matrix, category=None)
+        user_sim_arr = colab_filtering(user_rating_arr, rating_matrix, user_like_arr, like_matrix)
+
+        res_sim_arr = content_sim_arr + user_sim_arr
+        res_sim_arr[:topK]
+        # top K의 pk 매칭해서 돌려주기
+
+        res_spots = [2500, 500, 9, 11, 1]
+
+        return jsonify(res_spots)
+
+    except ValueError as e:
+        abort(400, str(e))
+    except KeyError as e:
+        abort(400, f'Missing key: {str(e)}')
+    except Exception as e:
+        abort(500, str(e))
 
 
 

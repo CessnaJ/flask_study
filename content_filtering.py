@@ -29,14 +29,18 @@ spot_matrix = [[1, 0, 0, 0, 0, 0, 0, 0, 1],
     ]
 
 # 통합된 matrix가 들어오니까 쪼개고, 분류해서 기능제공. 😀 pk매핑 유지 해야됨.
-def content_based_recom(ref_facility_arr, spot_matrix, category):
+def content_based_recom(ref_facility_arr, spot_matrix, category=None):
     # spot_matrix의 4번째 col이 category정보를 나타냄.
     cat_col_num = 3
     # spot_matrix의 cat이 1(카페)인 곳들만 선택
     
     spot_df = pd.DataFrame(spot_matrix)
+
     # 카테고리의 정보가 일치하는 row만 살린 df
-    cat_filtered_df = spot_df.loc[spot_df.iloc[:, cat_col_num] == category, :]
+    if category != None: # 0도 있음.
+        cat_filtered_df = spot_df.loc[spot_df.iloc[:, cat_col_num] == category, :]
+    else:
+        cat_filtered_df = spot_df
 
     # facility_df와 coor_df로 나눠서 저장. 😀 숫자 조정 필요.
     facility_df = cat_filtered_df.iloc[:8, :]
@@ -55,7 +59,7 @@ def content_based_recom(ref_facility_arr, spot_matrix, category):
     rating_scores = [rating_score(*rating) for rating in rating_df]
     
     # 각 점수를 0-1사이의 숫자로 치환을 먼저해서 비율을 원하는대로 조절 가능하게 해야함.
-    # 위의 시설유사도, 맨하탄거리, rating_score 반영된걸 취합하면 됨.
+    # 위의 시설유사도, 맨하탄거리, rating_score 반영된걸 취합하면 됨. 😀 오늘 수정
     content_scores = []
 
 
