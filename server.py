@@ -15,16 +15,7 @@ from colab_filtering import colab_filtering
 
 
 
-app = Flask(__name__)
 
-db = pymysql.connect(host='localhost',
-                     port=3306,
-                     user='root',
-                     password='root',
-                     db='dbname',
-                     charset='utf8')
-
-cursor = db.cursor()
 
 @app.route('/')
 def index():
@@ -101,6 +92,13 @@ if __name__ == '__main__':
     app.run(port=5000, debug=True)
 
 
+app = Flask(__name__)
 
+db = pymysql.connect(host='localhost',
+                     port=3306,
+                     user='root',
+                     password='root',
+                     db='dbname',
+                     charset='utf8')
 
-
+cursor = db.cursor()
