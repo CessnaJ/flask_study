@@ -4,7 +4,7 @@
 
 2. 카테고리를 눌러서 유저기반 추천을 받는 메인 추천기능
 '''
-from flask import Flask, request, redirect, jsonify
+from flask import Flask, request, redirect, jsonify, Blueprint, abort
 import pymysql
 
 import numpy as np
@@ -13,13 +13,32 @@ import pandas as pd
 from content_filtering import content_based_recom
 from colab_filtering import colab_filtering
 
-
-
+app = Flask(__name__)
+recom_bp = Blueprint('recom', __name__, url_prefix='/recom')
 
 
 @app.route('/')
 def index():
-    return 'test_hello?'
+    try:
+        # data = request.json
+        # data1 = request.get_json()
+        # print(data)
+        # print(data1)
+        return 'test_hello?'
+
+    except Exception as e1:
+        print(e1)
+        return e1
+
+@app.route('/post_test/', methods=['POST'])
+def post_test():
+    try:
+        data = request.json
+        print(data)
+        return 'post_test'
+    except Exception as e2:
+        print(e2)
+        return e2
 
 
 @app.route('/read/<id>/')
@@ -27,11 +46,12 @@ def read(id):
     return id
 
 
-# 해당 장소와 비슷한 장소 추천해주는 함수.
-@app.route('/content_recom/<int:cat_num>', methods=['POST'])
+# 해당 장소와 같은 카테고리의 비슷한 장소 추천해주는 함수.
+@recom_bp.route('/content_based/<int:cat_num>', methods=['POST'])
 def content_recom(cat_num):
     try:
         data = request.json
+        
         
         # 기준이 되는 arr -> 변수명 추후 수정 😀
         ref_facility_arr = data['spotsfs_arr']
@@ -52,7 +72,7 @@ def content_recom(cat_num):
 
 
 # pk랑 매핑 필요.
-@app.route('/hybrid_filtering_recom/', methods=['POST'])
+@recom_bp.route('/hybrid/', methods=['POST'])
 def hybrid_filtering():
     try:
         topK = 10
@@ -85,20 +105,12 @@ def hybrid_filtering():
     except Exception as e:
         abort(500, str(e))
 
+# 아래에 위치해야함.
+app.register_blueprint(recom_bp)
 
-
-
+# 모든 host로부터의 요청 허용. 시스템 허용 옵션도 받는다.
+# terminal에서 export FLASK_RUN_HOST=0.0.0.0 으로 해야 설정이 먹는거 수정해야함.
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8081, debug=True)
 
 
-app = Flask(__name__)
-
-db = pymysql.connect(host='localhost',
-                     port=3306,
-                     user='root',
-                     password='root',
-                     db='dbname',
-                     charset='utf8')
-
-cursor = db.cursor()
