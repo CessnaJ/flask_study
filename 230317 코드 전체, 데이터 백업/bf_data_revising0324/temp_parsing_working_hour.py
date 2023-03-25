@@ -21,22 +21,47 @@ from bs4 import BeautifulSoup
 
 def mapping_working_hour(soup):
     try:
+        if soup is None:
+            raise ValueError('Invalid input: soup is None')
+
         res_dict = {}
-        for div in soup.find_all('div', class_='w9QyJ')[1:]:
-            day = div.find('span', class_='i8cJw').text
-            hours = [x.strip() for x in div.find('div', class_='H3ua4').stripped_strings]
+        div_list = soup.find_all('div', class_='w9QyJ')
+    
+        if len(div_list) < 2:
+            print(i)
+            raise ValueError('No working hour information found')
+
+        for div in div_list[1:]:
+            day_span = div.find('span', class_='i8cJw')
+            if day_span is None:
+                # print(i)
+                # print(div)
+                continue
+                # raise ValueError('Failed to find day span')
+            else:
+                day = day_span.text
+
+            hours_div = div.find('div', class_='H3ua4')
+            if hours_div is None:
+                # print(i)
+                # print(div)
+                hours_div = div.find('span', class_='H3ua4')
+                if hours_div is None:
+                    raise ValueError('Failed to find hours div-span')
+            
+            try: 
+                if hours_div is not None:
+                    hours = [x.strip() for x in hours_div.stripped_strings]
+            except Exception as e3:
+                print(f'e3: {e3}')    
+
             res_dict[day] = hours
 
         return res_dict
 
-    except Exception as e1:
-        # error_handler_mapping(soup)
-
-        # print(e1)
-        # print(f'soup: {soup}')
-        # print(*soup)
-        # print('idx:',i)
-        return soup
+    except Exception as e:
+        print(f'Error occurred: {e}')
+        return None
 
 
 def error_handler_mapping(soup):
@@ -87,7 +112,7 @@ try:
         # sfiInfo 필드값 덮어쓰기
         row["naver_open_hours"] = parse_open_hour(i, row)
         # 수정된 행 다시 저장. menu dict가 최종본이 됨.
-        print(1)
+        # print(1)
         df.loc[i] = row
 
     # 결과 데이터프레임을 csv 파일로 저장하기

@@ -33,8 +33,10 @@ def content_based_recom(ref_facility_arr, spot_matrix, category=None):
     # spot_matrix의 4번째 col이 category정보를 나타냄.
     cat_col_num = 3
     # spot_matrix의 cat이 1(카페)인 곳들만 선택
-    
     spot_df = pd.DataFrame(spot_matrix)
+
+    #[1, 5, 9]
+    ref_facility_arr = binary_vectorize(ref_facility_arr)
 
     # 카테고리의 정보가 일치하는 row만 살린 df
     if category != None: # 0도 있음.
@@ -63,6 +65,12 @@ def content_based_recom(ref_facility_arr, spot_matrix, category=None):
     content_scores = []
 
 
+def binary_vectorize(arr):
+    # 9개짜리 vector 배열만듬
+    bin_vector = np.zeros(9)
+    # arr[[1, 5, 9]] = 1
+    bin_vector[np.array(arr)-1] = 1
+    return bin_vector
 
 
 # 거리계산 1 - 맨하탄거리
