@@ -12,6 +12,7 @@ import pandas as pd
 
 from content_filtering import content_based_recom
 from colab_filtering import colab_filtering
+from views_module import transform_dto_to_spot_arr, transform_dto_to_spot_matrix
 
 app = Flask(__name__)
 recom_bp = Blueprint('recom', __name__, url_prefix='/recom')
@@ -51,12 +52,15 @@ def read(id):
 @recom_bp.route('/content_based/<int:cat_num>', methods=['POST'])
 def content_recom(cat_num):
     try:
-        data = request.json
+        ref_facility_arr = request.json['spot'][0]
+        spot_info_matrix = request.json['spot_list'] # 이거 matrix 받아오는 함수 바꿔야 함.
         
+        ref_facility_arr = transform_dto_to_spot_arr(ref_facility_arr) # [0,0,0,0,0,0,0,0 - 8개// ]
+        spot_info_matrix = transform_dto_to_spot_matrix(spot_info_matrix)
         
         # 기준이 되는 arr -> 변수명 추후 수정 😀
-        ref_facility_arr = data['spotsfs_arr']
-        spot_info_matrix = data['spot_matrix']
+        # ref_facility_arr = data['spotsfs_arr']
+        # spot_info_matrix = data['spot_matrix']
         
         # 추천 메인로직 모듈화
         res = content_based_recom(ref_facility_arr, spot_info_matrix, cat_num)

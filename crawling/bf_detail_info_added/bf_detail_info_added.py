@@ -57,12 +57,12 @@ with open('bf_data_60pg.csv', 'a', encoding='utf-8', newline='') as csvfile:
     for idx, row in bf_df[['sid', 'cid']].iterrows():
 
 
-    if idx == 0:
-                    bf_df.iloc[[idx]].to_csv(new_csv, header=True, index=False)
-                else:
-                    bf_df.iloc[[idx]].to_csv(new_csv, header=False, index=False) # 1줄씩 csv파일에 쓰는 코드. 예상못한 에러로 인한 허탕 방지.
+        if idx == 0:
+            bf_df.iloc[[idx]].to_csv(new_csv, header=True, index=False)
+        else:
+            bf_df.iloc[[idx]].to_csv(new_csv, header=False, index=False) # 1줄씩 csv파일에 쓰는 코드. 예상못한 에러로 인한 허탕 방지.
                 
-                continue
+            continue
     
     
     writer = csv.writer(csvfile)

@@ -28,6 +28,9 @@ spot_matrix = [[1, 0, 0, 0, 0, 0, 0, 0, 1],
     [0, 1, 0, 1, 0, 0, 1, 0, 1],
     ]
 
+data_arr = {'spot': '[SpotForDjangoDto(spotSfInfos=[1], spotId=1, spotLat=36.396659269055, spotLng=127.40273836514, reviewRating=4.49, reviewCount=244)]'}
+
+
 # 통합된 matrix가 들어오니까 쪼개고, 분류해서 기능제공. 😀 pk매핑 유지 해야됨.
 def content_based_recom(ref_facility_arr, spot_matrix, category=None):
     # spot_matrix의 4번째 col이 category정보를 나타냄.
@@ -39,7 +42,7 @@ def content_based_recom(ref_facility_arr, spot_matrix, category=None):
     ref_facility_arr = binary_vectorize(ref_facility_arr)
 
     # 카테고리의 정보가 일치하는 row만 살린 df
-    if category != None: # 0도 있음.
+    if category != None: # 카테고리에 0도 있음.
         cat_filtered_df = spot_df.loc[spot_df.iloc[:, cat_col_num] == category, :]
     else:
         cat_filtered_df = spot_df
@@ -67,7 +70,7 @@ def content_based_recom(ref_facility_arr, spot_matrix, category=None):
 
 def binary_vectorize(arr):
     # 9개짜리 vector 배열만듬
-    bin_vector = np.zeros(9)
+    bin_vector = np.zeros(8)
     # arr[[1, 5, 9]] = 1
     bin_vector[np.array(arr)-1] = 1
     return bin_vector

@@ -1,6 +1,7 @@
 import json
 import math
 import numpy as np
+import pandas as pd
 # def missing_val_impulation():
 #     pass
 #     res = 1
@@ -42,3 +43,29 @@ def calculate_similarity(user_profile, building_profiles):
 
 user_profile = np.array([1, 0, 0, 0, 0, 0, 0, 0, 1])
 # building_profiles = np.array([[1, 0,]])
+
+
+def transform_dto_to_spot_arr(dto_arr):
+    spotId = dto_arr['spotId'] # 1
+    spotSfInfos = dto_arr['spotSfInfos'] # [1, 3] - 1 ~ 8 // 
+    spotLat = dto_arr['spotLat'] # 
+    spotLng = dto_arr['spotLng'] # 
+    reviewRating = dto_arr['reviewRating'] # 
+    reviewCount = dto_arr['reviewCount'] # 
+
+    return {
+        'spotSfInfos': spotSfInfos,
+        'spotId': spotId,
+        'spotLat': spotLat,
+        'spotLng': spotLng,
+        'reviewRating': reviewRating,
+        'reviewCount': reviewCount
+    }
+
+
+
+
+
+def transform_dto_to_spot_matrix(dto_matrix):
+    dto_matrix
+
