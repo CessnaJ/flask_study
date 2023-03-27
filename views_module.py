@@ -64,7 +64,7 @@ def transform_dto_to_spot_arr(spot_dict):
     
     sfvector = binary_vectorize(spotSfInfos)
 
-    return [pk] + sfvector + [spotLat, spotLng, reviewRating, reviewCount]
+    return [spotId] + sfvector + [spotLat, spotLng, reviewRating, reviewCount]
     
     
 
