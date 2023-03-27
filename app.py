@@ -49,21 +49,22 @@ def read(id):
 
 
 # 해당 장소와 같은 카테고리의 비슷한 장소 추천해주는 함수.
-@recom_bp.route('/content_based/<int:cat_num>', methods=['POST'])
-def content_recom(cat_num):
+@recom_bp.route('/content_based/', methods=['POST'])
+def content_recom():
     try:
-        ref_facility_arr = request.json['spot'][0]
-        spot_info_matrix = request.json['spot_list'] # 이거 matrix 받아오는 함수 바꿔야 함.
+        print(request.data)
+
+        ref_spot_dict = request.json['spot'][0]
+        spot_info_matrix_dto = request.json['spot_list'] # 이거 matrix 받아오는 함수 바꿔야 함.
+        cat_num = request.json['spot'].get('cat_num')  # get을 썼기때문에, None이 될 수 있음.
         
-        ref_facility_arr = transform_dto_to_spot_arr(ref_facility_arr) # [0,0,0,0,0,0,0,0 - 8개// ]
-        spot_info_matrix = transform_dto_to_spot_matrix(spot_info_matrix)
+        ref_arr = transform_dto_to_spot_arr(ref_spot_dict)
+        spot_info_matrix = transform_dto_to_spot_matrix(spot_info_matrix_dto)
         
-        # 기준이 되는 arr -> 변수명 추후 수정 😀
-        # ref_facility_arr = data['spotsfs_arr']
-        # spot_info_matrix = data['spot_matrix']
-        
+        print('asd')
+
         # 추천 메인로직 모듈화
-        res = content_based_recom(ref_facility_arr, spot_info_matrix, cat_num)
+        res = content_based_recom(ref_arr, spot_info_matrix, cat_num)
 
         return jsonify(res)
     

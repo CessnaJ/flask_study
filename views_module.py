@@ -45,27 +45,35 @@ user_profile = np.array([1, 0, 0, 0, 0, 0, 0, 0, 1])
 # building_profiles = np.array([[1, 0,]])
 
 
-def transform_dto_to_spot_arr(dto_arr):
-    spotId = dto_arr['spotId'] # 1
-    spotSfInfos = dto_arr['spotSfInfos'] # [1, 3] - 1 ~ 8 // 
-    spotLat = dto_arr['spotLat'] # 
-    spotLng = dto_arr['spotLng'] # 
-    reviewRating = dto_arr['reviewRating'] # 
-    reviewCount = dto_arr['reviewCount'] # 
-
-    return {
-        'spotSfInfos': spotSfInfos,
-        'spotId': spotId,
-        'spotLat': spotLat,
-        'spotLng': spotLng,
-        'reviewRating': reviewRating,
-        'reviewCount': reviewCount
-    }
+def binary_vectorize(arr):
+    # 9개짜리 vector 배열만듬
+    bin_vector = np.zeros(8)
+    # arr[[1, 5, 9]] = 1
+    bin_vector[np.array(arr)-1] = 1
+    return bin_vector
 
 
+# spot_dto 전처리해서 arr로 return해주는 함수.
+def transform_dto_to_spot_arr(spot_dict):
+    spotSfInfos = spot_dict['spotSfInfos']   #->     [1]
+    spotId = spot_dict['spotId'] #-> 1
+    spotLat = spot_dict['spotLat'] #-> 36.39665
+    spotLng = spot_dict['spotLng'] #-> 127.4027
+    reviewRating = spot_dict['reviewRating'] #-> 4.49
+    reviewCount = spot_dict['reviewCount'] #-> 244
+    
+    sfvector = binary_vectorize(spotSfInfos)
 
+    return [pk] + sfvector + [spotLat, spotLng, reviewRating, reviewCount]
+    
+    
 
-
+# spot_dto_list를 받아서 순회하면서 전처리하고 다시 matrix로 합친걸 return 해주는 함수.
 def transform_dto_to_spot_matrix(dto_matrix):
-    dto_matrix
+    spot_matrix = []
+    
+    for spot_dict in dto_matrix:
+        spot_matrix.append(transform_dto_to_spot_arr(spot_dict))
+
+    return spot_matrix
 
