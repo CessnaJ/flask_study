@@ -48,12 +48,11 @@ def read(id):
     return id
 
 
+# 기준이 되는 장소의 pk, 
 # 해당 장소와 같은 카테고리의 비슷한 장소 추천해주는 함수.
 @recom_bp.route('/content_based/', methods=['POST'])
 def content_recom():
     try:
-        print(request.data)
-
         ref_spot_dict = request.json['spot'][0]
         spot_info_matrix_dto = request.json['spot_list'] # 이거 matrix 받아오는 함수 바꿔야 함.
         cat_num = request.json['spot'].get('cat_num')  # get을 썼기때문에, None이 될 수 있음.
