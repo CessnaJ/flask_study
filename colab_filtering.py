@@ -44,7 +44,7 @@ def colab_filtering(user_rating_arr, rating_matrix, user_like_arr, like_matrix):
 
 
 # rating 기준으로 한 유사도 구하기 0-1
-def rating_cos_sim(user_rating_arr, rating_matrix):
+def rating_cos_sim(user_rating_arr, rating_matrix): # 둘중 하나가 0이면, 유사도 분모에 안들어감.
     user_rating_arr = np.array(user_rating_arr).reshape(1,-1)
     res = cosine_similarity(user_rating_arr, rating_matrix)
     return res
