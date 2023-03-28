@@ -10,15 +10,21 @@ pk_df = pd.read_excel(pk_excel_file)
 
 arr = []
 matching_dict = {}
+
+temp = 0
 # 각 행 순회하기
 for i, row in df.iterrows():
     df_name = row['spotName']
 
     for j, pk_row in pk_df.iterrows():
+        
+        if j < temp: # 이전에 답이 나온 index를 저장해두고 거기서부터 다시 시작하는 dp
+            continue
+
         pk_df_name = pk_row['spotName']
         if df_name == pk_df_name:
             df.at[i, 'pk'] = pk_df.at[j, 'spotSeq']
-            matching_dict[i].append(j)
+            temp = j
 
             break
 
