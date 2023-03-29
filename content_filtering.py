@@ -71,7 +71,7 @@ def content_based_recom(ref_arr, spot_matrix, category=None):
     # 위의 시설유사도, 맨하탄거리, rating_score 반영된걸 취합 후, 상위 10개 반환.
     scores_sum = sum_scores(facility_scores, manhattan_scores, rating_scores)
     score_id_mapped_list = [(spotId, score) for spotId, score in zip(scores_sum, facility_spotIds.values.tolist(), manhattan_distances)]
-    res = sorted(score_id_mapped_list)[:10]
+    res = sorted(score_id_mapped_list, reverse=True)[:10]
     # [(환산합산점수, pk, 거리)...] 로 되어있는 10개의 배열이 나옴.
     return res
     

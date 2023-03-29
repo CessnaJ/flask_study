@@ -96,10 +96,10 @@ def hybrid_filtering():
         user_sim_arr = colab_filtering(user_rating_arr, rating_matrix, user_like_arr, like_matrix)
 
         res_sim_arr = content_sim_arr + user_sim_arr
-        res_sim_arr[:topK]
+        res_spots = res_sim_arr[:topK]
         # top K의 pk 매칭해서 돌려주기
 
-        res_spots = [2500, 500, 9, 11, 1]
+        # res_spots = [2500, 500, 9, 11, 1]
 
         return jsonify(res_spots)
 

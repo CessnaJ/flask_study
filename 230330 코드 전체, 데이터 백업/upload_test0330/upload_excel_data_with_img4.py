@@ -67,7 +67,6 @@ def handleSubmit():
         ]
 
         url = 'http://192.168.31.134:8080/api/spot/save'
-
         res2 = requests.post(url, files=form_data)
 
     print(res2)
