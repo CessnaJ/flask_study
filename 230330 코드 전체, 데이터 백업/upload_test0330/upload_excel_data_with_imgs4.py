@@ -6,11 +6,9 @@ import pandas as pd
 excel_file = 'pre_processing_complete_data.xlsx'
 df = pd.read_excel(excel_file)
 
-
 def get_image_files(row):
     related_pk = eval(row['related_pk'])
     img_files = []
-    # 이미지 파일을 저장하는 폴더 경로입니다. 이 경로를 변경해 주세요.
     img_folder_path = './imgs/'
 
     if related_pk == []:
@@ -20,7 +18,10 @@ def get_image_files(row):
             file_name = f'img_spotSeq_{pk}_{index}.jpg'
             file_path = os.path.join(img_folder_path, file_name)
             if os.path.exists(file_path):
-                img_files.append((file_name, open(file_path, 'rb'), 'image/jpeg'))
+                with open(file_path, 'rb') as img_file:
+                    # img_files.append(('spotImages', img_file.read(), file_name))
+                    img_files.append((f'pk_{pk}_{index}.jpg', (file_name, img_file.read(), 'image/jpeg')))
+
                 index += 1
             else:
                 break
@@ -30,20 +31,15 @@ def get_image_files(row):
             while True:
                 file_name = f'img_spotSeq_{pk}_{index}.jpg'
                 file_path = os.path.join(img_folder_path, file_name)
-                
-                # if os.path.exists(file_path):
-                #     with open(file_path, 'rb') as img_file:
-                #         img_files.append((file_name, img_file.read(), 'image/jpeg'))
-                #         index += 1
-
                 if os.path.exists(file_path):
                     with open(file_path, 'rb') as img_file:
-                        img_files.append(('spotImages', (file_name, img_file.read(), 'image/jpeg')))
-                        index += 1
+                        # img_files.append(('spotImages', img_file.read(), file_name))
+                        img_files.append((f'pk_{pk}_{index}.jpg', img_file.read(), 'image/jpeg'))
+
+                    index += 1
                 else:
                     break
     return img_files
-
 
 def handleSubmit():
     # try:
@@ -51,8 +47,13 @@ def handleSubmit():
             if i > 0:
                 break
 
-            sfinfo = eval(row['sfiInfo'])
-            
+            sfInfos = eval(row['sfiInfo'])
+            # union_sfinfo = eval(row['union_spotsfs'])
+
+            # if len(union_sfinfo) > len(sfinfo):
+            #     sfInfos = union_sfinfo
+            # else:
+            #     sfInfos = sfinfo
 
             body_dict = {
                 'spot': {
@@ -67,28 +68,30 @@ def handleSubmit():
                     'reviewCount': row['naver_rating_count']
                 },
 
-                'sfInfos': sfinfo
+                'sfInfos': sfInfos
             }
 
             img_files = get_image_files(row)
-            print(img_files)
 
-            # form-data 만들기 1번경우
-            # form_data = {
-                # "spotDto": (None, json.dumps(body_dict, ensure_ascii=False), "application/json"),
-            # }
+            # 😀 가능성2
+            # form_data = [
+            #     ("spotDto", (None, json.dumps(body_dict, ensure_ascii=False), "application/json")),
+            #     *img_files,
+            # ]
+            # 😀 가능성1
+            # form_data = {"spotDto": (None, json.dumps(body_dict, ensure_ascii=False), "application/json"),
+            #              "spotImages": img_files}
+            
+            #😀제발 되라.
+            form_data = [
+                ("spotDto", (None, json.dumps(body_dict, ensure_ascii=False), "application/json")),
+                *[(f"spotImages", img) for img in img_files],  # 수정된 부분
+            ]
 
-            # 이미지파일을 1개씩 매칭해야되는경우 😀
-            # for index, img_file in enumerate(img_files):
-                # form_data[f"spotImages[{index}]"] = img_file
-
-            # 이미지 파일을 1개 key에 싸그리 넣어서 보내는 경우 😀 이 경우에는, 위에 있는 form_data 이렇게 다시 갱신함. 둘 중 하나 선택해서 보내야됨.
-            form_data = {
-                "spotDto": (None, json.dumps(body_dict, ensure_ascii=False), "application/json"),
-                **dict(img_files),
-            }
-
-
+            # form_data = [
+            #     ("spotDto", (None, json.dumps(body_dict, ensure_ascii=False), "application/json")),
+            #     ("spotImages", (None, *img_files, "image/jpeg"))
+            # ]
 
             url = 'http://192.168.31.134:8080/api/spot/save'
 
@@ -97,7 +100,6 @@ def handleSubmit():
         print(res2)
 
     # except Exception as e:
-        # print(e)
-
+    #     print(e)
 
 handleSubmit()

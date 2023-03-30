@@ -36,14 +36,14 @@ data_arr = {'spot': '[SpotForDjangoDto(spotSfInfos=[1], spotId=1, spotLat=36.396
 def content_based_recom(ref_arr, spot_matrix, category=None):
     # ref_arr = [1, 1,0,0,0,0,0,0,0, 36.3965, 127.4027, 4.49, 244]
 
-    cat_col_num = -1 # 맨 마지막에 끼워넣을것임.
+    cat_col_num = 13 # 맨 마지막에 끼워넣을것임.
     # spot_matrix의 cat이 1(카페)인 곳들만 선택
     spot_df = pd.DataFrame(spot_matrix)
 
     ref_spotId = ref_arr[0]
     ref_facility_arr = ref_arr[1:9]
     ref_coor = ref_arr[9:11]
-    ref_rating = ref_arr[11:]
+    ref_rating = ref_arr[11:13]
 
     # 카테고리의 정보가 일치하는 row만 살린 df
     if category != None: # 카테고리에 0도 있음.
@@ -52,34 +52,54 @@ def content_based_recom(ref_arr, spot_matrix, category=None):
         cat_filtered_df = spot_df
 
     facility_spotIds = cat_filtered_df.iloc[:, :1]
+    
+    # print(facility_spotIds)
+    facility_spotIds = [item[0] for item in facility_spotIds.values.tolist()] # nested list로 받아온걸 arr로 변환
+    # print(facility_spotIds)
+    # print('아이디값 리스트')
     facility_df = cat_filtered_df.iloc[:, 1:9]
     coor_df = cat_filtered_df.iloc[:, 9:11]
     rating_df = cat_filtered_df.iloc[:, 11:13]
     matrix_size = len(facility_spotIds)
     
     # 1차 - 시설 유사도정보 구함. ndArr.
-    facility_scores = facility_cos_sim(ref_facility_arr, facility_df)
+    facility_scores = facility_cos_sim(ref_facility_arr, facility_df) # 0-10의 스코어가 나온다.
+    print('스코어')
+    print(facility_scores)
 
     # 기준 좌표정보로부터 각 시설의 맨하탄거리를 구한 list
     manhattan_distances = [manhattan_distance(ref_coor, coor_item) for coor_item in coor_df.itertuples(index=False)]
-    manhattan_scores = convert_manhattan_distances(manhattan_distances)
+    print('맨하탄거리')
+    print(manhattan_distances)
+    manhattan_scores = convert_manhattan_distances(manhattan_distances) # 0-10의 스코어가 나온다.
+    print('아래 맨하탄스코어')
+    print(manhattan_scores)
     
     # rating_scores = [rating_score(rating_df[idx][0], rating[idx][1]) for idx in range(matrix_size)]
-    rating_scores = [rating_score(*rating) for rating in rating_df.itertuples(index=False)]
+    rating_scores = [rating_score(*rating) for rating in rating_df.itertuples(index=False)] # 0-10의 스코어가 나온다.
+    print('리뷰스코어')
+    print(rating_scores)
     
     
     # 위의 시설유사도, 맨하탄거리, rating_score 반영된걸 취합 후, 상위 10개 반환.
-    scores_sum = sum_scores(facility_scores, manhattan_scores, rating_scores)
-    score_id_mapped_list = [(spotId, score) for spotId, score in zip(scores_sum, facility_spotIds.values.tolist(), manhattan_distances)]
-    res = sorted(score_id_mapped_list, reverse=True)[:10]
-    # [(환산합산점수, pk, 거리)...] 로 되어있는 10개의 배열이 나옴.
+    scores_sum = sum_scores(facility_scores, manhattan_scores, rating_scores) # 0-30의 스코어가 나온다.
+    print('합산스코어')
+    print(scores_sum)
+
+    print('집한거 출력')
+    print(*zip(scores_sum, facility_spotIds, manhattan_distances))
+    score_id_mapped_list = [(score/30, spotId, manhattan_dist) for score, spotId, manhattan_dist in zip(scores_sum, facility_spotIds, manhattan_distances)] # 
+    print('최종변환리스트')
+    print(score_id_mapped_list)
+    res = sorted(score_id_mapped_list, reverse=True)
+    # [(환산합산점수0-1, pk, 맨하탄거리)...] 로 되어있는 모든 장소의의 배열이 나옴. top10개로 추리는 과정 필요.
     return res
     
 
 
 
 def binary_vectorize(arr):
-    # 9개짜리 vector 배열만듬
+    # 8개짜리 vector 배열만듬
     bin_vector = np.zeros(8)
     # arr[[1, 5, 9]] = 1
     bin_vector[np.array(arr)-1] = 1
@@ -110,11 +130,13 @@ def convert_manhattan_distances(manhattan_distances):
 
     for distance in manhattan_distances:
         if distance < 0.5:  # 0.5 km 미만인 경우
-            result.append(1)
+            single_score = 10
         elif distance > 10:  # 10 km 초과인 경우
-            result.append(0)
+            single_score = 0
         else:  # 0.5 km 이상 10 km 이하인 경우
-            result.append(1 - (distance - 0.5) / 9.5)
+            single_score = ((1 - (distance - 0.5) / 9.5)*10)
+        
+        result.append(single_score)
     return result
 
 
@@ -132,7 +154,7 @@ def rating_score(avg_score, count):
     score_weight = 1
     count_weight = 1
 
-    return (avg_score*score_weight + log10(count)*count_weight)/10
+    return (avg_score*score_weight + log10(count)*count_weight)
 
 
 def sum_scores(facility_scores, manhattan_scores, rating_scores):

@@ -23,7 +23,7 @@ spot4 = [0, 1, 0, 1, 0, 0, 1, 0, 1]
 matrix = [[1, 0, 0, 0, 0, 0, 0, 0, 1], 
     [1, 0, 1, 0, 0, 0, 0, 0, 1], 
     [1, 0, 1, 1, 0, 0, 0, 0, 1], 
-    [0, 1, 0, 1, 0, 0, 1, 0, 1]] 이렇게 matrix로 주어질 수도 있어. 파이썬 코드로 짜주고 결과를 보여줄 수 있어?
+    [0, 1, 0, 1, 0, 0, 1, 0, 1]] 
 '''
 
 def cosine_similarity(a, b):
@@ -46,34 +46,46 @@ user_profile = np.array([1, 0, 0, 0, 0, 0, 0, 0, 1])
 
 
 def binary_vectorize(arr):
-    # 9개짜리 vector 배열만듬
+    # 8개짜리 vector 배열만듬
     bin_vector = np.zeros(8)
-    # arr[[1, 5, 9]] = 1
     bin_vector[np.array(arr)-1] = 1
-    return bin_vector
+    return bin_vector.tolist()
 
 
 # spot_dto 전처리해서 arr로 return해주는 함수.
 def transform_dto_to_spot_arr(spot_dict):
-    spotSfInfos = spot_dict['spotSfInfos']   #->     [1]
-    spotId = spot_dict['spotId'] #-> 1
-    spotLat = spot_dict['spotLat'] #-> 36.39665
-    spotLng = spot_dict['spotLng'] #-> 127.4027
-    reviewRating = spot_dict['reviewRating'] #-> 4.49
-    reviewCount = spot_dict['reviewCount'] #-> 244
-    
-    sfvector = binary_vectorize(spotSfInfos)
+    # try:
+        
+        spotSfInfos = spot_dict['sfInfoIds']   #->[1]
+        spotId = spot_dict['spotId'] #-> 1
+        spotLat = spot_dict['spotLat'] #-> 36.39665
+        spotLng = spot_dict['spotLng'] #-> 127.4027
+        reviewRating = spot_dict['reviewScore'] #-> 4.49
+        reviewCount = spot_dict['reviewCount'] #-> 244
+        category = spot_dict['spotCategory'] # 식당 1, 도서관 31, 32 ... 😀
 
-    return [spotId] + sfvector + [spotLat, spotLng, reviewRating, reviewCount]
+        sfvector = binary_vectorize(spotSfInfos)
+        return [spotId] + sfvector + [spotLat, spotLng, reviewRating, reviewCount, category]
+    # except Exception as e:
+        # print(e)
+        # print(spot_dict)
     
     
 
 # spot_dto_list를 받아서 순회하면서 전처리하고 다시 matrix로 합친걸 return 해주는 함수.
 def transform_dto_to_spot_matrix(dto_matrix):
-    spot_matrix = []
     
-    for spot_dict in dto_matrix:
-        spot_matrix.append(transform_dto_to_spot_arr(spot_dict))
+    dto_matrix = json.loads(dto_matrix)
+    # print(dto_matrix)
+    # print(type(dto_matrix))
+    return [transform_dto_to_spot_arr(spot_dict) for spot_dict in dto_matrix]
 
-    return spot_matrix
+
+# def transform_dto_to_spot_matrix(dto_matrix):
+#     spot_matrix = []
+    
+#     for spot_dict in dto_matrix:
+#         spot_matrix.append(transform_dto_to_spot_arr(spot_dict))
+
+#     return spot_matrix
 

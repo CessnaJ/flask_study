@@ -2,6 +2,7 @@ import requests
 import json
 import os
 import pandas as pd
+import ast
 
 excel_file = 'pre_processing_complete_data.xlsx'
 df = pd.read_excel(excel_file)
@@ -48,29 +49,14 @@ def handleSubmit():
                 break
 
             sfInfos = eval(row['sfiInfo'])
-            
-            # body_dict = {
-            #     'spot': {
-            #         'spotName': row['spotName'] if not pd.isna(row['spotName']) else "",
-            #         'spotAddress': row['spotAddress'] if not pd.isna(row['spotAddress']) else "",
-            #         'spotBuildingName': row['spotBuildingName'] if not pd.isna(row['spotBuildingName']) else "",
-            #         'spotCategory': row['New_cat'] if not pd.isna(row['New_cat']) else 9,
-            #         'spotTelNumber': row['spotTel'] if not pd.isna(row['spotTel']) else "",
-            #         'spotLat': row['spotLat'] if not pd.isna(row['spotLat']) else 0.0,
-            #         'spotLng': row['spotLng'] if not pd.isna(row['spotLng']) else 0.0,
-            #         'reviewScore': row['naver_rating_score'] if not pd.isna(row['naver_rating_score']) else 0,
-            #         'reviewCount': row['naver_rating_count'] if not pd.isna(row['naver_rating_count']) else 0,
-            #         'menu': row['menu'] if not pd.isna(row['naver_rating_count']) else 0
-            #     },
-            #     'sfInfos': sfInfos
-            # }
 
 
             menu = row['menu']
             if pd.isna(menu) or menu == "":
-                menu = {}
+                menu = []
             else:
-                menu = json.loads(menu.replace("'", "\""))
+                menu = ast.literal_eval(menu)
+                menu = [{"title": k, "price": v} for k, v in menu.items()]
 
             body_dict = {
                 'spot': {
@@ -84,6 +70,9 @@ def handleSubmit():
                     'reviewScore': row['naver_rating_score'] if not pd.isna(row['naver_rating_score']) else 0,
                     'reviewCount': row['naver_rating_count'] if not pd.isna(row['naver_rating_count']) else 0,
                     'menus': menu
+                    # zipcode 추가
+                    # bf정보 추가
+                    # ready정보 추가
                 },
                 'sfInfos': sfInfos
             }
@@ -94,7 +83,7 @@ def handleSubmit():
 
             form_data = [
                 ("spotDto", (None, json.dumps(body_dict, ensure_ascii=False), "application/json")),
-                # *img_files
+                *img_files
                 # img_files[0],
                 # ("spotImages", (img_files[0][0], img_files[0][1], "image/jpeg"))
             ]

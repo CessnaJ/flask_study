@@ -60,7 +60,7 @@ def handleSubmit():
                     'reviewCount': row['naver_rating_count']
                 },
 
-                'sfInfos': sfInfos
+                'sfInfos': sfinfo
             }
 
             img_files = get_image_files(row)

@@ -6,6 +6,8 @@
 '''
 from flask import Flask, request, redirect, jsonify, Blueprint, abort
 import pymysql
+import json
+import ast
 
 import numpy as np
 import pandas as pd
@@ -21,10 +23,6 @@ recom_bp = Blueprint('recom', __name__, url_prefix='/recom')
 @app.route('/')
 def index():
     try:
-        # data = request.json
-        # data1 = request.get_json()
-        # print(data)
-        # print(data1)
         return 'test_hello?'
 
     except Exception as e1:
@@ -36,8 +34,9 @@ def index():
 def post_test():
     try:
         data = request.json
+        print(request)
         print(data)
-        return 'post_test'
+        return data
     except Exception as e2:
         print(e2)
         return e2
@@ -48,51 +47,67 @@ def read(id):
     return id
 
 
-# 기준이 되는 장소의 pk, 
+# 기준이 되는 장소의 pk
 # 해당 장소와 같은 카테고리의 비슷한 장소 추천해주는 함수.
-@recom_bp.route('/content_based/', methods=['POST'])
+# @recom_bp.route('/content_based/', methods=['POST'])
+@app.route('/content_based', methods=['POST'] )
 def content_recom():
     try:
-        ref_spot_dict = request.json['spot'][0]
-        spot_info_matrix_dto = request.json['spot_list'] # 이거 matrix 받아오는 함수 바꿔야 함.
-        cat_num = request.json['spot'].get('cat_num')  # get을 썼기때문에, None이 될 수 있음.
+        data = request.json
+        ref_spot_dict_str = data['userSpot']
+        ref_spot_dict = json.loads(ref_spot_dict_str)
+        
+        spot_info_matrix_dto = data['spots']
+        # temp_dto = json.loads(spot_info_matrix_dto)
+        
+        cat_num = ref_spot_dict.get('category')
         
         ref_arr = transform_dto_to_spot_arr(ref_spot_dict)
         spot_info_matrix = transform_dto_to_spot_matrix(spot_info_matrix_dto)
-        
-        print('asd')
 
         # 추천 메인로직 모듈화
         res = content_based_recom(ref_arr, spot_info_matrix, cat_num)
+        res = res#asdasd
+        # [(환산합산점수0-1, pk, 맨하탄거리)...] 로 되어있는 모든 장소의의 배열이 나옴. top10개로 추리는 과정 필요.
 
-        return jsonify(res)
+        top10_res = res[:10]
+        print(top10_res)
+        top10_res_formatted = [(item[1], round(item[2]*1000,-2)) for item in top10_res]
+        return jsonify(top10_res_formatted)
     
     except ValueError as e:
+        print(e)
         abort(400, str(e))
     except KeyError as e:
+        print(e)
         abort(400, f'Missing key: {str(e)}')
     except Exception as e:
+        print(e)
         abort(500, str(e))
 
 
 
 # pk랑 매핑 필요.
-@recom_bp.route('/hybrid/', methods=['POST'])
+# @recom_bp.route('/hybrid/', methods=['POST'])
+@app.route('/hybrid', methods=['POST'])
 def hybrid_filtering():
     try:
         topK = 10
         data = request.json
+        # json 객체 변환부
+        ref_facility_arr = data['user_arr'] # 1번 파라미터
+        spot_info_matrix = data['spot_matrix'] # 2번 파라미터
 
-        ref_facility_arr = data['user_arr']
-        spot_info_matrix = data['spot_matrix']
+        user_rating_arr = data['user_rating_arr'] # user_arr에서 추출해서 새로운 arr구성 필요.
+        rating_matrix = data['rating_matrix'] # 3번파라미터-1
 
-        user_rating_arr = data['user_rating_arr']
-        rating_matrix = data['rating_matrix']
+        user_like_arr = data['user_like_arr'] # user_arr에서 추출해서 새로운 arr 구성 필요.
+        like_matrix = data['like_matrix'] # 3번파라미터 -2
 
-        user_like_arr = data['user_like_arr']
-        like_matrix = data['like_matrix']
 
-        content_sim_arr = content_based_recom(ref_facility_arr, spot_info_matrix, category=None)
+        # 계산부
+        content_sim_arr = content_based_recom(ref_facility_arr, spot_info_matrix, category=None) 
+        # [(0.2418561222123986, 1, 10.899476864300897), (0.2533676665221327, 2, 10.882014520230928), (변환 스코어0-1, pk, 맨하탄거리..) ... ]
         user_sim_arr = colab_filtering(user_rating_arr, rating_matrix, user_like_arr, like_matrix)
 
         res_sim_arr = content_sim_arr + user_sim_arr
