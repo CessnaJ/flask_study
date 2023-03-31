@@ -64,33 +64,33 @@ def content_based_recom(ref_arr, spot_matrix, category=None):
     
     # 1차 - 시설 유사도정보 구함. ndArr.
     facility_scores = facility_cos_sim(ref_facility_arr, facility_df) # 0-10의 스코어가 나온다.
-    print('스코어')
-    print(facility_scores)
+    # print('스코어')
+    # print(facility_scores)
 
     # 기준 좌표정보로부터 각 시설의 맨하탄거리를 구한 list
     manhattan_distances = [manhattan_distance(ref_coor, coor_item) for coor_item in coor_df.itertuples(index=False)]
-    print('맨하탄거리')
-    print(manhattan_distances)
+    # print('맨하탄거리')
+    # print(manhattan_distances)
     manhattan_scores = convert_manhattan_distances(manhattan_distances) # 0-10의 스코어가 나온다.
-    print('아래 맨하탄스코어')
-    print(manhattan_scores)
+    # print('아래 맨하탄스코어')
+    # print(manhattan_scores)
     
     # rating_scores = [rating_score(rating_df[idx][0], rating[idx][1]) for idx in range(matrix_size)]
     rating_scores = [rating_score(*rating) for rating in rating_df.itertuples(index=False)] # 0-10의 스코어가 나온다.
-    print('리뷰스코어')
-    print(rating_scores)
+    # print('리뷰스코어')
+    # print(rating_scores)
     
     
     # 위의 시설유사도, 맨하탄거리, rating_score 반영된걸 취합 후, 상위 10개 반환.
     scores_sum = sum_scores(facility_scores, manhattan_scores, rating_scores) # 0-30의 스코어가 나온다.
-    print('합산스코어')
-    print(scores_sum)
+    # print('합산스코어')
+    # print(scores_sum)
 
-    print('집한거 출력')
-    print(*zip(scores_sum, facility_spotIds, manhattan_distances))
+    # print('집한거 출력')
+    # print(*zip(scores_sum, facility_spotIds, manhattan_distances))
     score_id_mapped_list = [(score/30, spotId, manhattan_dist) for score, spotId, manhattan_dist in zip(scores_sum, facility_spotIds, manhattan_distances)] # 
-    print('최종변환리스트')
-    print(score_id_mapped_list)
+    # print('최종변환리스트')
+    # print(score_id_mapped_list)
     res = sorted(score_id_mapped_list, reverse=True)
     # [(환산합산점수0-1, pk, 맨하탄거리)...] 로 되어있는 모든 장소의의 배열이 나옴. top10개로 추리는 과정 필요.
     return res
@@ -144,8 +144,8 @@ def convert_manhattan_distances(manhattan_distances):
 def facility_cos_sim(ref_facility_arr, facility_matrix):
     ref_facility_arr = np.array(ref_facility_arr).reshape(1,-1)
     res = cosine_similarity(ref_facility_arr, facility_matrix)
-    print(type(res))
-    print(res)
+    # print(type(res))
+    # print(res)
     return res[0]
 
 

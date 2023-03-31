@@ -93,9 +93,10 @@ def handleSubmit():
             #     ("spotDto", (None, json.dumps(body_dict, ensure_ascii=False), "application/json")),
             #     ("spotImages", (None, *img_files, "image/jpeg"))
             # ]
-
+            
             # url = 'http://192.168.31.134:8080/api/spot/save'
-            url = 'http://172.20.10.2:8080/api/spot/save'
+            # url = 'http://172.20.10.2:8080/api/spot/save'
+            url = 'http://j8b205.p.ssafy.io:8080/api/spot/save'
 
             print(form_data[0])
 

@@ -34,13 +34,17 @@ matrix =[[5,0,1,0,0],
 
 # rating 유사도 arr, like 유사도 arr 합해서 최종 유사도 구하기 (0-1 유사도만 나옴. 예상평점은 필요 없어서 일부러 안구했음.)
 # 예외처리 시나리오 - 전체 유저의 숫자가 K명 미만, 평가한 항목이 K개 미만 (colab filtering 반영 안하는게 맞음.)
-def colab_filtering(user_rating_arr, rating_matrix, user_like_arr, like_matrix):
+def colab_filtering(user_rating_arr, rating_matrix, user_like_arr, like_matrix, user_id_arr):
     rating_sim_arr = rating_cos_sim(user_rating_arr, rating_matrix) # npArr
     like_sim_arr = like_cos_sim(user_like_arr, like_matrix) # npArr 이거 수정 필요.
 
     res_sim = rating_sim_arr + like_sim_arr
     res_sim /= 2
-    return res_sim
+    res_sim = res_sim.tolist()
+    
+    res_id_sim = list(zip(user_id_arr, res_sim))
+
+    return res_id_sim
 
 
 # rating 기준으로 한 유사도 구하기 0-1
@@ -64,7 +68,11 @@ def like_cos_sim(user_like_arr, like_matrix):
     return res
 
 
-def expected_rating():
+def calc_expected_rating(user_sim_arr, rating_matrix):
+    # user_sim_arr -> [(userpk, 유사도), (userpk, 유사도)... ]
+    # rating_matrix -> rating_matrix - row가 user번호와 매칭. col이 spot번호와 매칭. cell의 값은 rating점수 - 기준user의 pk는 빠져있음.
+
+    # 필요로직. 
     pass
 
 
