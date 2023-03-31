@@ -45,15 +45,22 @@ def colab_filtering(user_rating_arr, rating_matrix, user_like_arr, like_matrix):
 
 # rating 기준으로 한 유사도 구하기 0-1
 def rating_cos_sim(user_rating_arr, rating_matrix): # 둘중 하나가 0이면, 유사도 분모에 안들어감.
+    print('평점으로 유사도 시작!')
     user_rating_arr = np.array(user_rating_arr).reshape(1,-1)
     res = cosine_similarity(user_rating_arr, rating_matrix)
+    print('평점으로 유사도')
+    print(res)
     return res
 
 
-# like/dislike 기준으로 한 유사도 구하기 0-1
+# like/dislike 기준으로 한 유사도 구하기 0-1 # 가중치 좀 줄이는게 좋을거같음.
 def like_cos_sim(user_like_arr, like_matrix):
+    print('좋아요/싫어요로 유사도 시작!')
     user_like_arr = np.array(user_like_arr).reshape(1,-1)
     res = cosine_similarity(user_like_arr, like_matrix)
+    print('좋아요,싫어요로 유사도')
+    print(res)
+
     return res
 
 

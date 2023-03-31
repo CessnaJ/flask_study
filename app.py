@@ -14,7 +14,7 @@ import pandas as pd
 
 from content_filtering import content_based_recom
 from colab_filtering import colab_filtering
-from views_module import transform_dto_to_spot_arr, transform_dto_to_spot_matrix
+from views_module import transform_dto_to_spot_arr, transform_dto_to_spot_matrix, transform_dto_to_ref_user_arr, transform_dto_to_user_matrixes
 
 app = Flask(__name__)
 recom_bp = Blueprint('recom', __name__, url_prefix='/recom')
@@ -53,26 +53,36 @@ def read(id):
 @app.route('/content_based', methods=['POST'] )
 def content_recom():
     try:
+        print(request)
         data = request.json
+        # print(data)
         ref_spot_dict_str = data['userSpot']
+        print(1)
         ref_spot_dict = json.loads(ref_spot_dict_str)
+        print(2)
+        cat_num = ref_spot_dict.get('category')
+        print(3)
         
         spot_info_matrix_dto = data['spots']
+        print(4)
         # temp_dto = json.loads(spot_info_matrix_dto)
         
-        cat_num = ref_spot_dict.get('category')
-        
         ref_arr = transform_dto_to_spot_arr(ref_spot_dict)
+        print(5)
         spot_info_matrix = transform_dto_to_spot_matrix(spot_info_matrix_dto)
+        print(6)
 
         # 추천 메인로직 모듈화
         res = content_based_recom(ref_arr, spot_info_matrix, cat_num)
-        res = res#asdasd
+        print(7)
+        # res = res
         # [(환산합산점수0-1, pk, 맨하탄거리)...] 로 되어있는 모든 장소의의 배열이 나옴. top10개로 추리는 과정 필요.
 
         top10_res = res[:10]
+        print(8)
         print(top10_res)
         top10_res_formatted = [(item[1], round(item[2]*1000,-2)) for item in top10_res]
+        print(10)
         return jsonify(top10_res_formatted)
     
     except ValueError as e:
@@ -91,9 +101,13 @@ def content_recom():
 # @recom_bp.route('/hybrid/', methods=['POST'])
 @app.route('/hybrid', methods=['POST'])
 def hybrid_filtering():
+    # print(request)
+    # print(request.json)
+    # return request.json
+    
     try:
         topK = 10
-        data = request.json
+        data = request.json # json 객체를 일단 통째로 가져옴.
         # json 객체 변환부
         ref_facility_arr = data['user_arr'] # 1번 파라미터
         spot_info_matrix = data['spot_matrix'] # 2번 파라미터
@@ -104,9 +118,23 @@ def hybrid_filtering():
         user_like_arr = data['user_like_arr'] # user_arr에서 추출해서 새로운 arr 구성 필요.
         like_matrix = data['like_matrix'] # 3번파라미터 -2
 
+        # 😀여기서부터 아래로 다시 파싱하는 로직.
+        ref_user_str = data['user']
+        user_dto_str = data['users']
+        spot_dto_str = data['spots']
+
+        ref_user_dict = json.loads(ref_user_str)
+        users_dict = json.loads(user_dto_str)
+        spots_dict = json.loads(spot_dto_str)
+
+
+        spots_matrix = transform_dto_to_spot_matrix(spots_dict)
+        ref_user_arr, user_rating_arr, user_like_arr = transform_dto_to_ref_user_arr(ref_user_dict, len(spots_matrix))
+        users_rating_matrix, users_like_matrix = transform_dto_to_user_matrixes(users_dict)
+
 
         # 계산부
-        content_sim_arr = content_based_recom(ref_facility_arr, spot_info_matrix, category=None) 
+        content_sim_arr = content_based_recom(ref_facility_arr, spot_info_matrix, category=None)
         # [(0.2418561222123986, 1, 10.899476864300897), (0.2533676665221327, 2, 10.882014520230928), (변환 스코어0-1, pk, 맨하탄거리..) ... ]
         user_sim_arr = colab_filtering(user_rating_arr, rating_matrix, user_like_arr, like_matrix)
 

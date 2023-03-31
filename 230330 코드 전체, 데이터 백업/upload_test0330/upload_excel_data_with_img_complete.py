@@ -45,8 +45,8 @@ def get_image_files(row):
 def handleSubmit():
     # try:
         for i, row in df.iterrows():
-            if i > 10:
-                break
+            # if i > 10:
+                # break
 
             sfInfos = eval(row['sfiInfo'])
 
@@ -69,10 +69,12 @@ def handleSubmit():
                     'spotLng': row['spotLng'] if not pd.isna(row['spotLng']) else 0.0,
                     'reviewScore': row['naver_rating_score'] if not pd.isna(row['naver_rating_score']) else 0,
                     'reviewCount': row['naver_rating_count'] if not pd.isna(row['naver_rating_count']) else 0,
-                    'menus': menu
+                    'menus': menu,
+                    'zipcode': row['zipcode'] if not pd.isna(row['zipcode']) else 0,
                     # zipcode 추가
-                    # bf정보 추가
+                    'spotrate': row['spotRate'] if not pd.isna(row['spotRate']) else "",
                     # ready정보 추가
+                    'state': 'access'
                 },
                 'sfInfos': sfInfos
             }
@@ -92,7 +94,8 @@ def handleSubmit():
             #     ("spotImages", (None, *img_files, "image/jpeg"))
             # ]
 
-            url = 'http://192.168.31.134:8080/api/spot/save'
+            # url = 'http://192.168.31.134:8080/api/spot/save'
+            url = 'http://172.20.10.2:8080/api/spot/save'
 
             print(form_data[0])
 
