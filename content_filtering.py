@@ -102,7 +102,6 @@ def content_based_recom(ref_arr, spot_matrix, category=None):
 def binary_vectorize(arr):
     # 8개짜리 vector 배열만듬
     bin_vector = np.zeros(8)
-    # arr[[1, 5, 9]] = 1
     bin_vector[np.array(arr)-1] = 1
     return bin_vector
 

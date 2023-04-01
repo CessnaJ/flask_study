@@ -129,14 +129,8 @@ def hybrid_filtering():
         # rating_matrix - row가 user번호와 매칭. col이 spot번호와 매칭
         # like_matrix - row가 user번호와 매칭. col이 spot번호와 매칭
         
-        '''
-        만들어야하는 변수
-        ref_spotId = ref_arr[0]
-        ref_facility_arr = ref_arr[1:9]
-        ref_coor = ref_arr[9:11]
-        ref_rating = ref_arr[11:13]
-        '''
-        ref_facility_arr = [0] + user_facility_vector + user_coor + [0, 0] # 맨앞, 맨뒤 두개는 필요없음.
+        
+        ref_facility_arr = [0] + user_facility_vector + user_coor + [0, 0] # 맨앞, 맨뒤 두개는 postional argument 위해 0으로 둠.
         # 원래spotid, binvector-00000000, user_coor, 0,0 순서로 들어있음 ( idx형식 맞추기 위해서 빈값으로 0 둠.)
 
         # 계산부
@@ -166,6 +160,12 @@ def hybrid_filtering():
         abort(400, f'Missing key: {str(e)}')
     except Exception as e:
         abort(500, str(e))
+
+
+@recom_bp.route('/content_based', methods=['POST'])
+def fetch_bus_stop_info():
+    
+    pass
 
 # 아래에 위치해야함.
 app.register_blueprint(recom_bp)
