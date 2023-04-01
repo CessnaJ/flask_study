@@ -55,34 +55,22 @@ def read(id):
 @recom_bp.route('/content_based', methods=['POST'])
 def content_recom():
     try:
-        # print(request)
         data = request.json
-        # print(data)
         ref_spot_dict_str = data['userSpot']
-        # print(1)
         ref_spot_dict = json.loads(ref_spot_dict_str)
-        # print(2)
         cat_num = ref_spot_dict.get('category')
-        # print(3)
-        
         spot_info_matrix_dto = data['spots']
-        # print(4)
-        # temp_dto = json.loads(spot_info_matrix_dto)
         
         ref_arr = transform_dto_to_spot_arr(ref_spot_dict)
-        # print(5)
         spot_info_matrix = transform_dto_to_spot_matrix(spot_info_matrix_dto)
-        # print(6)
-
+        
         # 추천 메인로직 모듈화
         res_ordered_by_spotId, manhattan_distances, facility_scores = content_based_recom(ref_arr, spot_info_matrix, cat_num)
-        # print(7)
+        # hybrid filtering 위해 필요없는 해당 로직에서는 필요없는 변수 생성.
+        
         res_sorted_by_score = sorted(res_ordered_by_spotId, reverse=True)
         top10_res = res_sorted_by_score[:10]
-        # print(8)
-        # print(top10_res)
         top10_res_formatted = [(item[1], round(item[2]*1000,-2)) for item in top10_res]
-        # print(10)
         return jsonify(top10_res_formatted)
     
     except ValueError as e:

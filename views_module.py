@@ -34,24 +34,6 @@ def binary_vectorize(arr):
         return bin_vector.tolist()
 
 
-    # arr = [int(x) for x in arr]
-    # try:
-    #     if type(arr) != list:
-    #         print(type(arr))
-
-        
-    #     bin_vector[np.array(arr)-1] = 1
-    #     return bin_vector.tolist()
-    # except Exception as e:
-    #     print(arr)
-    #     print(type(arr))
-        
-    #     for el in arr:
-    #         print("asdasda")
-    #         print(el)
-    #         print(type(el))
-
-
 # spot_dto 전처리해서 arr로 return해주는 함수.
 def transform_dto_to_spot_arr(spot_dict):
     # try:
@@ -72,25 +54,10 @@ def transform_dto_to_spot_arr(spot_dict):
         # print(spot_dict)
     
     
-
 # spot_dto_list를 받아서 순회하면서 전처리하고 다시 matrix로 합친걸 return 해주는 함수.
 def transform_dto_to_spot_matrix(dto_matrix):
-    # print(11)
     dto_matrix = json.loads(dto_matrix)
-    # print(22)
-    # print(dto_matrix)
-    # print(type(dto_matrix))
-    # print(33)
     return [transform_dto_to_spot_arr(spot_dict) for spot_dict in dto_matrix]
-
-
-# def transform_dto_to_spot_matrix(dto_matrix):
-#     spot_matrix = []
-    
-#     for spot_dict in dto_matrix:
-#         spot_matrix.append(transform_dto_to_spot_arr(spot_dict))
-
-#     return spot_matrix
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 아래는 하이브리드 필터링.
