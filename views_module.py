@@ -103,11 +103,11 @@ def transform_dto_to_ref_user_arrs(dto_dict, spot_matrix_length):
     rating vector
     like vector
     '''
-    user_id = dto_dict['userId']   # ->[2, 4, 5]
+    user_id = dto_dict['userId']   # -> pk 1
     spotSfInfos = dto_dict['sfInfoIds']   # ->[2, 4, 5]
     
-    spotLat = dto_dict['userLat'] #-> 36.39665
-    spotLng = dto_dict['userLng'] #-> 127.4027
+    spotLat = dto_dict['userLat'] #-> 36.39665 # 기준 유저가 아니라면 0.0이 들어온다
+    spotLng = dto_dict['userLng'] #-> 127.4027 # 기준유저가 아니라면 0.0이 들어온다.
     user_coor = [spotLat, spotLng]
 
     reviews_arr = dto_dict['reviews'] #-> 4.49
@@ -125,6 +125,11 @@ def transform_dto_to_ref_user_arrs(dto_dict, spot_matrix_length):
     
     return user_id, category_ids, user_facility_vector, user_coor, rating_vector, like_vector
         
+
+def transform_dto_to_review_count_arr(dto_matrix):
+    dto_matrix = json.loads(dto_matrix)
+    return [spot_dict['reviewCount'] for spot_dict in dto_matrix]
+
 
 
 def create_rating_vector(arr, spot_matrix_length):
@@ -152,17 +157,58 @@ def create_like_vector(like_arr, dislike_arr, spot_matrix_length):
 
 
 
-def transform_dto_to_user_matrixes(spot_dict_list, spot_matrix_length):
+def transform_dto_to_user_matrixes(user_dict_list, spot_matrix_length):
+    # 
     user_facility_matrix = []
     rating_matrix = []
     like_matrix = []
     user_id_arr= []
 
-    for idx, spot_dict in enumerate(spot_dict_list):
+    for idx, spot_dict in enumerate(user_dict_list):
         user_id, category_ids, user_facility_vector, user_coor, rating_vector, like_vector = transform_dto_to_ref_user_arrs(spot_dict, spot_matrix_length)
+        # category_ids, user_coor은 null, (0.0, 0.0)
         user_facility_matrix.append(user_facility_vector)
         rating_matrix.append(rating_vector)
         like_matrix.append(like_vector)
         user_id_arr.append(user_id)
     
     return user_id_arr, np.array(user_facility_matrix), np.array(rating_matrix), np.array(like_matrix)
+
+
+def verify_recom_reason(recom_arr, manhattan_distances, facility_scores, expected_rating_arr, spot_review_count_arr):
+    '''
+    top10_spots/recom_arr -> [[최종점수, pk, 카테고리], [최종점수, pk, 카테고리], [최종점수, pk, 카테고리] ... ] 1부터 시작
+    
+    manhattan_distances, facility_scores, expected_rating_arr, spot_review_count_arr  idx가 pk를 대체. 0부터 시작.
+    '''
+    print(facility_scores[:10])
+    print(expected_rating_arr[:10])
+    print(spot_review_count_arr[:10])
+    print(manhattan_distances[:10])
+
+    result = []
+
+    for recom_item in recom_arr:
+        pk = recom_item[1]
+        idx = pk - 1
+        
+        if facility_scores[idx] > 0.7:
+            result.append([recom_item, round(manhattan_distances[idx]*1000,-2), '배려시설유사도가 높아요!'])
+        elif manhattan_distances[idx] < 0.5:
+            result.append([recom_item, round(manhattan_distances[idx]*1000,-2), '방문하기 좋은 위치에 있어요!'])
+        elif expected_rating_arr[idx] > 3.5:
+            result.append([recom_item, round(manhattan_distances[idx]*1000,-2), '비슷한 취향의 사용자들이 추천한 장소에요!'])
+        elif spot_review_count_arr[idx] > 500:
+            result.append([recom_item, round(manhattan_distances[idx]*1000,-2), '우리동네 핫 플레이스!'])
+        else:
+            result.append([recom_item, round(manhattan_distances[idx]*1000,-2), '주변 사용자들의 평가가 좋은 장소에요!'])
+
+    return result
+
+
+
+
+
+
+
+

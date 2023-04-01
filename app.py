@@ -13,8 +13,8 @@ import numpy as np
 import pandas as pd
 
 from content_filtering import content_based_recom
-from colab_filtering import colab_filtering, calc_expected_rating
-from views_module import transform_dto_to_spot_arr, transform_dto_to_spot_matrix, transform_dto_to_ref_user_arrs, transform_dto_to_user_matrixes
+from colab_filtering import colab_filtering, calc_expected_rating, filtering_by_cat_list
+from views_module import transform_dto_to_spot_arr, transform_dto_to_spot_matrix, transform_dto_to_ref_user_arrs, transform_dto_to_user_matrixes, verify_recom_reason, transform_dto_to_review_count_arr
 
 app = Flask(__name__)
 recom_bp = Blueprint('recom', __name__, url_prefix='/recom')
@@ -75,12 +75,10 @@ def content_recom():
         # print(6)
 
         # 추천 메인로직 모듈화
-        res = content_based_recom(ref_arr, spot_info_matrix, cat_num)
+        res_ordered_by_spotId, manhattan_distances, facility_scores = content_based_recom(ref_arr, spot_info_matrix, cat_num)
         # print(7)
-        # res = res
-        # [(환산합산점수0-1, pk, 맨하탄거리)...] 로 되어있는 모든 장소의의 배열이 나옴. top10개로 추리는 과정 필요.
-
-        top10_res = res[:10]
+        res_sorted_by_score = sorted(res_ordered_by_spotId, reverse=True)
+        top10_res = res_sorted_by_score[:10]
         # print(8)
         # print(top10_res)
         top10_res_formatted = [(item[1], round(item[2]*1000,-2)) for item in top10_res]
@@ -120,13 +118,16 @@ def hybrid_filtering():
         users_dict = json.loads(user_dto_str)
         spots_dict = json.loads(spot_dto_str)
         spot_info_matrix = transform_dto_to_spot_matrix(user_dto_str) # json.loads가 필요?
+        spot_review_count_arr = transform_dto_to_review_count_arr(user_dto_str)
+        
 
         spot_len = len(spots_matrix)
 
 
         spots_matrix = transform_dto_to_spot_matrix(spots_dict)
+        spot_cat_arr = [spots_matrix[idx][-1] for idx in range(len(spot_info_matrix))] # 카테고리만 모아놓은 arr
         
-        user_id, category_ids, user_facility_vector, user_coor, rating_vector, like_vector = transform_dto_to_ref_user_arrs(ref_user_dict, spot_len)
+        user_id, user_category_ids, user_facility_vector, user_coor, rating_vector, like_vector = transform_dto_to_ref_user_arrs(ref_user_dict, spot_len)
         # user_id - 기준유저id
         # category_ids -카테고리 id 들어있는 list 
         # user_facility_vector - 선호시설 vector [1, 0, 0, 0, 1, 1 ... ]
@@ -151,30 +152,25 @@ def hybrid_filtering():
         # 원래spotid, binvector-00000000, user_coor, 0,0 순서로 들어있음 ( idx형식 맞추기 위해서 빈값으로 0 둠.)
 
         # 계산부
-        content_sim_arr = content_based_recom(ref_facility_arr, spot_info_matrix, category=None)
+        content_based_arr, manhattan_distances, facility_scores = content_based_recom(ref_facility_arr, spot_info_matrix, category=None) # [(score/30, spotId, manhattan_dist) ... id순서대로 반환]
         # [(0.2418561222123986, 1, 10.899476864300897), (0.2533676665221327, 2, 10.882014520230928), (변환 스코어0-1, pk, 맨하탄거리..) ... ] 다시 3 곱해야함.(비중줄이기위해 5만 곱했음.)
-        content_based_score_arr = [[item[0]*3, item[1]] for item in content_sim_arr] # 모든 장소에 대해서 결과가 나온다.
+        # content_based_score_arr = [[item[0]*3, item[1]] for item in content_based_arr] # 모든 장소에 대해서 결과가 나온다.
         # [ (0-1에서 3를 곱한값, pk) ... ] 장소pk순서로 들어옴.
 
         user_sim_arr = colab_filtering(rating_vector, rating_matrix, like_vector, like_matrix, user_id_arr) # [(유저간 유사도가 들어옴.) (userpk, 유사도), (userpk, 유사도)... ]
         expected_rating_arr = calc_expected_rating(user_sim_arr, rating_matrix) # [(예상점수, pk), (예상점수, pk)...] user_sim_arr는 0.3정도로 반영된다.
 
+        score_spotpk_category_arr = [[content_based_arr[idx][0]*3 + expected_rating_arr[idx][0], expected_rating_arr[idx][1], spot_cat_arr[idx]] for idx in range(len(expected_rating_arr))]
+        # 최종결과 (content_based를 3배한 값 + 예상평점,  pk, category)
+        filtered_spots = filtering_by_cat_list(score_spotpk_category_arr, user_category_ids)
+        top10_spots = sorted(filtered_spots, reverse=True)[:topK] # pk-1이 index가 됨.
+        
+        # res_spots = top100_spots[:topK]
 
+        # res_with_recom_reason = verify_recom_reason(res_spots, manhattan_distances, facility_scores, expected_rating_arr, spot_review_count_arr)
+        res_with_recom_reason = verify_recom_reason(top10_spots, manhattan_distances, facility_scores, expected_rating_arr, spot_review_count_arr)
 
-        res_sim_arr = content_sim_arr + user_sim_arr
-        res_spots = res_sim_arr[:topK]
-
-
-        # 😀 구현 필요.
-        def filtering_by_cat_list(res_spots, cat_list):
-            # 필터링 arr 이용해서 거르고 반환하는 로직
-            res = res_spots
-            return res[:topK]
-        # top K의 pk 매칭해서 돌려주기
-
-        # res_spots = [2500, 500, 9, 11, 1]
-
-        return jsonify(res_spots)
+        return jsonify(res_with_recom_reason)
 
     except ValueError as e:
         abort(400, str(e))

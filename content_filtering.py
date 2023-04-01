@@ -91,9 +91,10 @@ def content_based_recom(ref_arr, spot_matrix, category=None):
     score_id_mapped_list = [(score/30, spotId, manhattan_dist) for score, spotId, manhattan_dist in zip(scores_sum, facility_spotIds, manhattan_distances)] # 
     # print('최종변환리스트')
     # print(score_id_mapped_list)
-    res = sorted(score_id_mapped_list, reverse=True)
+
+    # res = sorted(score_id_mapped_list, reverse=True)
     # [(환산합산점수0-1, pk, 맨하탄거리)...] 로 되어있는 모든 장소의의 배열이 나옴. top10개로 추리는 과정 필요.
-    return res
+    return score_id_mapped_list, manhattan_distances, facility_scores
     
 
 
