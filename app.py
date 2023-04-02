@@ -5,21 +5,30 @@
 2. 카테고리를 눌러서 유저기반 추천을 받는 메인 추천기능
 '''
 from flask import Flask, request, redirect, jsonify, Blueprint, abort
+from flask_mysqldb import MySQL
 import pymysql
 import json
 import ast
+from haversine import haversine
 
 import numpy as np
 import pandas as pd
 
+from db_utils import get_all_bus_stops_from_database, create_bus_stop_table, insert_bus_stop_data
 from content_filtering import content_based_recom
 from colab_filtering import colab_filtering, calc_expected_rating, filtering_by_cat_list
 from views_module import transform_dto_to_spot_arr, transform_dto_to_spot_matrix, transform_dto_to_ref_user_arrs, transform_dto_to_user_matrixes, verify_recom_reason, transform_dto_to_review_count_arr
-
+from bus_info import reformat_arrival_data
 app = Flask(__name__)
 recom_bp = Blueprint('recom', __name__, url_prefix='/recom')
 
+# MySQL 연결 설정
+app.config['MYSQL_HOST'] = 'your_host'
+app.config['MYSQL_USER'] = 'your_user'
+app.config['MYSQL_PASSWORD'] = 'your_password'
+app.config['MYSQL_DB'] = 'your_database'
 
+mysql = MySQL(app)
 
 @app.route('/')
 def index():
@@ -42,11 +51,6 @@ def post_test():
     except Exception as e2:
         print(e2)
         return e2
-
-
-@app.route('/read/<id>/')
-def read(id):
-    return id
 
 
 # 기준이 되는 장소의 pk
@@ -129,9 +133,8 @@ def hybrid_filtering():
         # rating_matrix - row가 user번호와 매칭. col이 spot번호와 매칭
         # like_matrix - row가 user번호와 매칭. col이 spot번호와 매칭
         
-        
         ref_facility_arr = [0] + user_facility_vector + user_coor + [0, 0] # 맨앞, 맨뒤 두개는 postional argument 위해 0으로 둠.
-        # 원래spotid, binvector-00000000, user_coor, 0,0 순서로 들어있음 ( idx형식 맞추기 위해서 빈값으로 0 둠.)
+        # spotid, binvector-[0,0,0,0,0,0,0,0], user_coor, rating_score, rating_count 순서로 들어있음 ( idx형식 맞추기 위해서 빈값으로 0 둠.)
 
         # 계산부
         content_based_arr, manhattan_distances, facility_scores = content_based_recom(ref_facility_arr, spot_info_matrix, category=None) # [(score/30, spotId, manhattan_dist) ... id순서대로 반환]
@@ -162,8 +165,77 @@ def hybrid_filtering():
         abort(500, str(e))
 
 
+
+@recom_bp.route('/write_bus_stop_data', methods=['GET'])
+def write_bus_stop_data():
+    file_name = 'bus_stop.xlsx'
+    bus_stop_df = pd.read_excel(file_name)
+
+    create_bus_stop_table(mysql)
+    data_to_insert = bus_stop_df[['ARO_BUSSTOP_ID', 'BUSSTOP_NM', 'GPS_LATI', 'GPS_LONG']].values.tolist()
+    insert_bus_stop_data(mysql, data_to_insert)
+
+
+    return 'done'
+
+
+
+
+
+
+
 @recom_bp.route('/content_based', methods=['POST'])
 def fetch_bus_stop_info():
+    '''
+    json 형식 
+    [
+        {'stop_name': stop_name, 'dist': dist, 'arr_infos':[]},
+        {'stop_name': stop_name, 'dist': dist, 'arr_infos':[]},
+        {'stop_name': stop_name, 'dist': dist, 'arr_infos':[]},
+        ...
+    ]
+
+    각 item안에 들어있는 arr_infos (도착정보 arrival infomations) 
+    [
+        {'route_no': route_no, 'expected_time_min':expected_time_min, 'bus_stop_position':bus_stop_position, 'destination':destination},
+        {'route_no': route_no, 'expected_time_min':expected_time_min, 'bus_stop_position':bus_stop_position, 'destination':destination},
+        {'route_no': route_no, 'expected_time_min':expected_time_min, 'bus_stop_position':bus_stop_position, 'destination':destination},
+        ...
+    ]
+    '''
+    data = request.json
+    spot_lat = data.get('lat') # 이름 보고 바꿔야함.
+    spot_lng = data.get('lng') # 이름 보고 바꿔야함.
+    bus_stop_datas = get_all_bus_stops_from_database(mysql) # 모든 버스 데이터를 다 불러옴
+
+    arr_datas = []
+    
+    bus_stop_within_500m = []
+    for bus_stop in bus_stop_datas:
+        bus_stop_coor = (bus_stop['lat'], bus_stop['lng']) # 바뀔 수 있음.
+        spot_coor = (spot_lat, spot_lng)
+        
+        haversine_dist = haversine(bus_stop_coor, spot_coor, unit='m')
+        if haversine_dist <= 500: # 500m이내라면?
+            bus_stop_within_500m_data = {'bus_stop_data' : bus_stop, 'distance' : haversine_dist}
+            bus_stop_within_500m.append(bus_stop_within_500m_data)
+
+    # bus_stop_within_500m 안쪽의 정류소 정보만 나옴.
+    for bus_stop_data in bus_stop_within_500m:
+        arrival_data = reformat_arrival_data(bus_stop_data)
+        arr_datas.append(arrival_data)
+    
+    return jsonify(arr_datas)
+
+        
+
+
+
+
+
+
+    
+
     
     pass
 
