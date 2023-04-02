@@ -34,9 +34,9 @@ def create_bus_stop_table(mysql):
 def insert_bus_stop_data(mysql, data):
     cursor = mysql.connection.cursor()
     query = """
-        INSERT INTO bus_stop (ARO_BUSSTOP, INSERT_ID, BUSSTOP_NM, GPS_LATI, GPS_LONG)
+        INSERT INTO bus_stop (ARO_BUSSTOP_ID, BUSSTOP_NM, GPS_LATI, GPS_LONG)
         VALUES (%s, %s, %s, %s)
-        """
+    """
     cursor.executemany(query, data)
     mysql.connection.commit()
     cursor.close()

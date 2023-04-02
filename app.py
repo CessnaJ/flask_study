@@ -168,15 +168,17 @@ def hybrid_filtering():
 
 @recom_bp.route('/write_bus_stop_data', methods=['GET'])
 def write_bus_stop_data():
-    file_name = 'bus_stop.xlsx'
-    bus_stop_df = pd.read_excel(file_name)
+    try:
+        file_name = 'bus_stop.xlsx'
+        bus_stop_df = pd.read_excel(file_name)
 
-    create_bus_stop_table(mysql)
-    data_to_insert = bus_stop_df[['ARO_BUSSTOP_ID', 'BUSSTOP_NM', 'GPS_LATI', 'GPS_LONG']].values.tolist()
-    insert_bus_stop_data(mysql, data_to_insert)
-
-
-    return 'done'
+        create_bus_stop_table(mysql)
+        data_to_insert = bus_stop_df[['ARO_BUSSTOP_ID', 'BUSSTOP_NM', 'GPS_LATI', 'GPS_LONG']].values.tolist()
+        insert_bus_stop_data(mysql, data_to_insert)
+        return 'done'
+    
+    except Exception as e:
+        print(e)
 
 
 
