@@ -1,7 +1,7 @@
 import requests
 import xmltodict
 
-def reformat_arrival_data(item):
+def reformat_arrival_data(item, bus_number_plates):
     bus_stop_data = item.get('bus_stop_data')
     
     bus_stop_id = bus_stop_data.get('ARO_BUSSTOP_ID')
@@ -19,13 +19,16 @@ def reformat_arrival_data(item):
 
     # 해당 정류장에 도착하는 버스별로 각각 가지는 정보들
     for arr_item in bus_stop_arr_info:
+        bus_number_plate = arr_item.get('CAR_REG_NO')
         route_no = arr_item.get('ROUTE_NO') # 노선 번호
         expected_time_min = arr_item.get('EXTIME_MIN') # 몇분 뒤 도착
         bus_stop_position = arr_item.get('STATUS_POS') # 몇정류장 전
         destination = arr_item.get('DESTINATION') # 종점( ~~ 행)
 
         arr_info = {'route_no': route_no, 'expected_time_min':expected_time_min, 'bus_stop_position':bus_stop_position, 'destination':destination}
-        res_dict['arr_infos'].append(arr_info)
+
+        if bus_number_plate in bus_number_plates:
+            res_dict['arr_infos'].append(arr_info)
     
     return res_dict
 

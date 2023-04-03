@@ -17,6 +17,19 @@ def get_all_bus_stops_from_database(mysql: MySQL):
     return bus_stop_data
 
 
+def get_all_low_floor_bus_from_database(mysql: MySQL):
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT CAR_REG_NO FROM bus")
+    bus_data = cursor.fetchall()
+    cursor.close()
+
+    bus_arr = [bus[0] for bus in bus_data]
+    bus_res = set(bus_arr)
+    
+    return bus_res
+
+
+
 def create_bus_stop_table(mysql):
     cursor = mysql.connection.cursor()
     cursor.execute("""
@@ -31,6 +44,21 @@ def create_bus_stop_table(mysql):
     cursor.close()
 
 
+
+def create_bus_table(mysql):
+    cursor = mysql.connection.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bus (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            CAR_REG_NO VARCHAR(255) UNIQUE
+        )
+        """)
+    mysql.connection.commit()
+    cursor.close()
+
+
+
+
 def insert_bus_stop_data(mysql, data):
     cursor = mysql.connection.cursor()
     query = """
@@ -38,5 +66,17 @@ def insert_bus_stop_data(mysql, data):
         VALUES (%s, %s, %s, %s)
     """
     cursor.executemany(query, data)
+    mysql.connection.commit()
+    cursor.close()
+
+
+def insert_bus_data(mysql, data):
+    cursor = mysql.connection.cursor()
+    query = """
+        INSERT INTO bus (CAR_REG_NO)
+        VALUES (%s)
+    """
+    cursor.executemany(query, data)
+    
     mysql.connection.commit()
     cursor.close()

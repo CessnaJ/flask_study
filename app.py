@@ -6,7 +6,7 @@
 '''
 from flask import Flask, request, redirect, jsonify, Blueprint, abort
 from flask_mysqldb import MySQL
-import pymysql
+# import pymysql
 import json
 import ast
 from haversine import haversine
@@ -14,7 +14,7 @@ from haversine import haversine
 import numpy as np
 import pandas as pd
 
-from db_utils import get_all_bus_stops_from_database, create_bus_stop_table, insert_bus_stop_data
+from db_utils import get_all_bus_stops_from_database, get_all_low_floor_bus_from_database, create_bus_stop_table, insert_bus_stop_data, create_bus_table, insert_bus_data
 from content_filtering import content_based_recom
 from colab_filtering import colab_filtering, calc_expected_rating, filtering_by_cat_list
 from views_module import transform_dto_to_spot_arr, transform_dto_to_spot_matrix, transform_dto_to_ref_user_arrs, transform_dto_to_user_matrixes, verify_recom_reason, transform_dto_to_review_count_arr
@@ -23,10 +23,10 @@ app = Flask(__name__)
 recom_bp = Blueprint('recom', __name__, url_prefix='/recom')
 
 # MySQL 연결 설정
-app.config['MYSQL_HOST'] = 'your_host'
-app.config['MYSQL_USER'] = 'your_user'
-app.config['MYSQL_PASSWORD'] = 'your_password'
-app.config['MYSQL_DB'] = 'your_database'
+app.config['MYSQL_HOST'] = '192.168.31.134:3306'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = '1234'
+app.config['MYSQL_DB'] = 'opendoors'
 
 mysql = MySQL(app)
 
@@ -90,12 +90,8 @@ def content_recom():
 
 
 # pk랑 매핑 필요.
-# @app.route('/hybrid', methods=['POST'])
 @recom_bp.route('/hybrid', methods=['POST'])
-def hybrid_filtering():
-    # print(request)
-    # print(request.json)
-    # return request.json
+def hybrid_recom():
     
     try:
         topK = 10
@@ -105,20 +101,21 @@ def hybrid_filtering():
         ref_user_str = data['user']
         user_dto_str = data['users']
         spot_dto_str = data['spots']
+        
 
         ref_user_dict = json.loads(ref_user_str)
         users_dict = json.loads(user_dto_str)
         spots_dict = json.loads(spot_dto_str)
-        spot_info_matrix = transform_dto_to_spot_matrix(user_dto_str) # json.loads가 필요?
-        spot_review_count_arr = transform_dto_to_review_count_arr(user_dto_str)
+        spot_info_matrix = transform_dto_to_spot_matrix(spot_dto_str) # json.loads가 필요?
+        spot_len = len(spot_info_matrix)
+        spot_review_count_arr = transform_dto_to_review_count_arr(spot_dto_str)
+
+
+        spots_matrix = transform_dto_to_spot_matrix(spot_dto_str)
         
-
-        spot_len = len(spots_matrix)
-
-
-        spots_matrix = transform_dto_to_spot_matrix(spots_dict)
         spot_cat_arr = [spots_matrix[idx][-1] for idx in range(len(spot_info_matrix))] # 카테고리만 모아놓은 arr
-        
+
+
         user_id, user_category_ids, user_facility_vector, user_coor, rating_vector, like_vector = transform_dto_to_ref_user_arrs(ref_user_dict, spot_len)
         # user_id - 기준유저id
         # category_ids -카테고리 id 들어있는 list 
@@ -127,54 +124,65 @@ def hybrid_filtering():
         # rating_vector - [0,5,3,3,0,0,0,0,1 ...]      spot 개수만큼 들어옴.
         # like_vector - [1,1,1,1,-1,-1,-1,0,0,0,-1...] spot개수만큼 들어옴.
         
+        
         user_id_arr, user_facility_matrix, rating_matrix, like_matrix = transform_dto_to_user_matrixes(users_dict, spot_len) # 완료.
         # user_id_arr - 전체 user아이디들의 arr(기준유저가 없는 idx)
         # user_facility_matrix -row가 user번호와 매칭. col이 시설정보 번호와 매칭
         # rating_matrix - row가 user번호와 매칭. col이 spot번호와 매칭
         # like_matrix - row가 user번호와 매칭. col이 spot번호와 매칭
+    
         
         ref_facility_arr = [0] + user_facility_vector + user_coor + [0, 0] # 맨앞, 맨뒤 두개는 postional argument 위해 0으로 둠.
         # spotid, binvector-[0,0,0,0,0,0,0,0], user_coor, rating_score, rating_count 순서로 들어있음 ( idx형식 맞추기 위해서 빈값으로 0 둠.)
+        
 
         # 계산부
         content_based_arr, manhattan_distances, facility_scores = content_based_recom(ref_facility_arr, spot_info_matrix, category=None) # [(score/30, spotId, manhattan_dist) ... id순서대로 반환]
         # [(0.2418561222123986, 1, 10.899476864300897), (0.2533676665221327, 2, 10.882014520230928), (변환 스코어0-1, pk, 맨하탄거리..) ... ] 다시 3 곱해야함.(비중줄이기위해 5만 곱했음.)
         # content_based_score_arr = [[item[0]*3, item[1]] for item in content_based_arr] # 모든 장소에 대해서 결과가 나온다.
         # [ (0-1에서 3를 곱한값, pk) ... ] 장소pk순서로 들어옴.
+        
 
         user_sim_arr = colab_filtering(rating_vector, rating_matrix, like_vector, like_matrix, user_id_arr) # [(유저간 유사도가 들어옴.) (userpk, 유사도), (userpk, 유사도)... ]
-        expected_rating_arr = calc_expected_rating(user_sim_arr, rating_matrix) # [(예상점수, pk), (예상점수, pk)...] user_sim_arr는 0.3정도로 반영된다.
-
-        score_spotpk_category_arr = [[content_based_arr[idx][0]*3 + expected_rating_arr[idx][0], expected_rating_arr[idx][1], spot_cat_arr[idx]] for idx in range(len(expected_rating_arr))]
-        # 최종결과 (content_based를 3배한 값 + 예상평점,  pk, category)
+        expected_rating_arr = calc_expected_rating(user_id, user_sim_arr, rating_matrix) # [(예상점수, pk), (예상점수, pk)...] user_sim_arr는 0.3정도로 반영된다.
+        score_spotpk_category_arr = [[content_based_arr[idx][0]*3 + expected_rating_arr[idx], content_based_arr[idx][1], spot_cat_arr[idx]] for idx in range(len(content_based_arr))]
         filtered_spots = filtering_by_cat_list(score_spotpk_category_arr, user_category_ids)
         top10_spots = sorted(filtered_spots, reverse=True)[:topK] # pk-1이 index가 됨.
-        
-        # res_spots = top100_spots[:topK]
-
-        # res_with_recom_reason = verify_recom_reason(res_spots, manhattan_distances, facility_scores, expected_rating_arr, spot_review_count_arr)
         res_with_recom_reason = verify_recom_reason(top10_spots, manhattan_distances, facility_scores, expected_rating_arr, spot_review_count_arr)
-
+        
         return jsonify(res_with_recom_reason)
 
     except ValueError as e:
+        print(e)
         abort(400, str(e))
+    
     except KeyError as e:
+        print(e)
         abort(400, f'Missing key: {str(e)}')
+        
     except Exception as e:
+        print(e)
         abort(500, str(e))
 
 
 
-@recom_bp.route('/write_bus_stop_data', methods=['GET'])
+@recom_bp.route('/write_bus_stop_data', methods=['POST'])
 def write_bus_stop_data():
     try:
-        file_name = 'bus_stop.xlsx'
-        bus_stop_df = pd.read_excel(file_name)
+        bus_stop_file_name = 'bus_stop.xlsx'
+        bus_stop_df = pd.read_excel(bus_stop_file_name)
+
+        bus_file_name = 'low_floor_bus_dup_removed.xlsx'
+        bus_df = pd.read_excel(bus_file_name)
 
         create_bus_stop_table(mysql)
-        data_to_insert = bus_stop_df[['ARO_BUSSTOP_ID', 'BUSSTOP_NM', 'GPS_LATI', 'GPS_LONG']].values.tolist()
-        insert_bus_stop_data(mysql, data_to_insert)
+        bus_stop_data_to_insert = bus_stop_df[['ARO_BUSSTOP_ID', 'BUSSTOP_NM', 'GPS_LATI', 'GPS_LONG']].values.tolist()
+        insert_bus_stop_data(mysql, bus_stop_data_to_insert)
+
+
+        create_bus_table(mysql)
+        bus_data_to_insert = bus_df[['CAR_REG_NO']].values.tolist()
+        insert_bus_data(mysql, bus_data_to_insert)
         return 'done'
     
     except Exception as e:
@@ -186,7 +194,7 @@ def write_bus_stop_data():
 
 
 
-@recom_bp.route('/content_based', methods=['POST'])
+@recom_bp.route('/bus_arr_info', methods=['POST'])
 def fetch_bus_stop_info():
     '''
     json 형식 
@@ -208,8 +216,8 @@ def fetch_bus_stop_info():
     data = request.json
     spot_lat = data.get('lat') # 이름 보고 바꿔야함.
     spot_lng = data.get('lng') # 이름 보고 바꿔야함.
-    bus_stop_datas = get_all_bus_stops_from_database(mysql) # 모든 버스 데이터를 다 불러옴
-
+    bus_stop_datas = get_all_bus_stops_from_database(mysql) # 모든 버스정류장 데이터를 불러옴
+    bus_data_set = get_all_low_floor_bus_from_database(mysql) # 모든 버스 데이터를 불러옴
     arr_datas = []
     
     bus_stop_within_500m = []
@@ -224,22 +232,17 @@ def fetch_bus_stop_info():
 
     # bus_stop_within_500m 안쪽의 정류소 정보만 나옴.
     for bus_stop_data in bus_stop_within_500m:
-        arrival_data = reformat_arrival_data(bus_stop_data)
+        arrival_data = reformat_arrival_data(bus_stop_data, bus_data_set)
         arr_datas.append(arrival_data)
     
     return jsonify(arr_datas)
 
-        
+
+# @recom_bp.route('/migrate_bus_data', methods=['POST'])
+# def fetch_bus_stop_info():
 
 
 
-
-
-
-    
-
-    
-    pass
 
 # 아래에 위치해야함.
 app.register_blueprint(recom_bp)
