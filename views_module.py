@@ -183,7 +183,7 @@ def transform_dto_to_user_matrixes(user_dict_list, spot_matrix_length):
 
 def verify_recom_reason(recom_arr, manhattan_distances, facility_scores, expected_rating_arr, spot_review_count_arr):
     '''
-    top10_spots/recom_arr -> [[최종점수, pk, 카테고리], [최종점수, pk, 카테고리], [최종점수, pk, 카테고리] ... ] 1부터 시작
+    top10_spots/recom_arr -> [[최종점수, spotpk, 카테고리], [최종점수, pk, 카테고리], [최종점수, pk, 카테고리] ... ] 1부터 시작
     
     manhattan_distances, facility_scores, expected_rating_arr, spot_review_count_arr  idx가 pk를 대체. 0부터 시작.
     '''
@@ -193,6 +193,7 @@ def verify_recom_reason(recom_arr, manhattan_distances, facility_scores, expecte
     print(manhattan_distances[:10])
 
     result = []
+    print(recom_arr)
 
     for recom_item in recom_arr:
         pk = recom_item[1]

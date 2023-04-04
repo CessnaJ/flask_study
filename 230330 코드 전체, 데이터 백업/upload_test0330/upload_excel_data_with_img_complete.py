@@ -94,9 +94,10 @@ def handleSubmit():
             #     ("spotImages", (None, *img_files, "image/jpeg"))
             # ]
             
-            # url = 'http://192.168.31.134:8080/api/spot/save'
             # url = 'http://172.20.10.2:8080/api/spot/save'
-            url = 'http://j8b205.p.ssafy.io:8080/api/spot/save'
+            # url = 'http://192.168.31.134:8080/api/spot/save'
+            url = 'http://j8b205.p.ssafy.io:8080/api/spot/save' # 배포
+            # url = 'http://192.168.31.27:8080/api/spot/save' #진섭이
 
             print(form_data[0])
 

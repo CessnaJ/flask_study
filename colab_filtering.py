@@ -112,41 +112,49 @@ def calc_expected_rating(key_user_id, user_sim_arr, rating_matrix):
     '''
     print('시작! 예상평점 구하ㅣ!')
     
-    # 행렬의 크기 계산
-    num_users, num_spots = rating_matrix.shape
-    # print('gffffffffffffffffffffffffffffff')
-    # print(len(rating_matrix))
-    # print('qhhhhhhhhhhhhhhhhhhhh')
-    # print(num_users)
-    # print(num_spots)
-    # print(1)
-    # 예상 평점을 저장할 배열 생성
-    expected_ratings = np.zeros(num_spots)
-    # print(2)
-    # 기준 유저와 다른 유저들 간의 유사도를 이용하여 예상 평점 계산
+    try:
+        # 행렬의 크기 계산
+        num_users, num_spots = rating_matrix.shape
+        # print('gffffffffffffffffffffffffffffff')
+        # print(len(rating_matrix))
+        # print('qhhhhhhhhhhhhhhhhhhhh')
+        # print(num_users)
+        # print(num_spots)
+        # print(1)
+        # 예상 평점을 저장할 배열 생성
+        expected_ratings = np.zeros(num_spots)
+        # print(2)
+        # 기준 유저와 다른 유저들 간의 유사도를 이용하여 예상 평점 계산
 
-    # rating_matrix.insert(key_user_id-1, np.zeros(num_spots))
-    rating_matrix = np.insert(rating_matrix, key_user_id - 1, np.zeros(num_spots), axis=0)
-    for user_pk, sim in user_sim_arr:
-        # print(9)
-        user_idx = user_pk - 1
-        # print(99)
-        # print(user_idx)
-        # print(rating_matrix)
-        ratings = rating_matrix[user_idx]
-        # print(999)
-        rated_spots = np.nonzero(ratings)[0]  # 평점을 매긴 시설의 인덱스들
-        # print(9999)
-        sim_matrix = np.ones(num_spots) * sim  # 유사도로 이루어진 행렬
-        # print(99999)
-        numerator = sim_matrix[rated_spots] @ ratings[rated_spots]  # 분자 계산
-        print(999999)
-        denominator = sim_matrix[rated_spots].sum()  # 분모 계산
-        if denominator > 0:
-            expected_ratings[rated_spots] += numerator / denominator
-    # print(3)
+        # rating_matrix.insert(key_user_id-1, np.zeros(num_spots))
+        rating_matrix = np.insert(rating_matrix, key_user_id - 1, np.zeros(num_spots), axis=0)
+        for user_pk, sim in user_sim_arr:
+            # print(9)
+            user_idx = user_pk - 1
+            # print(99)
+            # print(user_idx)
+            # print(rating_matrix)
+            ratings = rating_matrix[user_idx]
+            # print(999)
+            rated_spots = np.nonzero(ratings)[0]  # 평점을 매긴 시설의 인덱스들
+            # print(9999)
+            sim_matrix = np.ones(num_spots) * sim  # 유사도로 이루어진 행렬
+            # print(99999)
+            numerator = sim_matrix[rated_spots] @ ratings[rated_spots]  # 분자 계산
+            # print(999999)
+            denominator = sim_matrix[rated_spots].sum()  # 분모 계산
+            if denominator > 0:
+                expected_ratings[rated_spots] += numerator / denominator
+        # print(3)
+        
+        return expected_ratings.tolist()
     
-    return expected_ratings.tolist()
+    except Exception as e:
+        print(e)
+        print(key_user_id)
+        print(user_sim_arr)
+        print(rating_matrix)
+
     '''
     # 행렬의 크기 계산
     num_users, num_spots = rating_matrix.shape

@@ -23,10 +23,12 @@ app = Flask(__name__)
 recom_bp = Blueprint('recom', __name__, url_prefix='/recom')
 
 # MySQL 연결 설정
-app.config['MYSQL_HOST'] = '192.168.31.134:3306'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = '1234'
+app.config['MYSQL_HOST'] = '192.168.31.134'
+app.config['MYSQL_PORT'] = 3306
+app.config['MYSQL_USER'] = 'seongRoot'
+app.config['MYSQL_PASSWORD'] = 'b205b205@SEONG'
 app.config['MYSQL_DB'] = 'opendoors'
+app.config['JSON_AS_ASCII'] = False
 
 mysql = MySQL(app)
 
@@ -94,18 +96,19 @@ def content_recom():
 def hybrid_recom():
     
     try:
-        topK = 10
+        topK = 5
         data = request.json # json 객체를 일단 통째로 가져옴.
 
         # 😀여기서부터 아래로 다시 파싱하는 로직.
         ref_user_str = data['user']
         user_dto_str = data['users']
         spot_dto_str = data['spots']
-        
+        print(1)
 
         ref_user_dict = json.loads(ref_user_str)
         users_dict = json.loads(user_dto_str)
         spots_dict = json.loads(spot_dto_str)
+        print(2)
         spot_info_matrix = transform_dto_to_spot_matrix(spot_dto_str) # json.loads가 필요?
         spot_len = len(spot_info_matrix)
         spot_review_count_arr = transform_dto_to_review_count_arr(spot_dto_str)
@@ -174,19 +177,23 @@ def write_bus_stop_data():
 
         bus_file_name = 'low_floor_bus_dup_removed.xlsx'
         bus_df = pd.read_excel(bus_file_name)
+        print(11)
 
         create_bus_stop_table(mysql)
+        print(22)
         bus_stop_data_to_insert = bus_stop_df[['ARO_BUSSTOP_ID', 'BUSSTOP_NM', 'GPS_LATI', 'GPS_LONG']].values.tolist()
         insert_bus_stop_data(mysql, bus_stop_data_to_insert)
+        print(33)
 
 
         create_bus_table(mysql)
         bus_data_to_insert = bus_df[['CAR_REG_NO']].values.tolist()
         insert_bus_data(mysql, bus_data_to_insert)
-        return 'done'
+        return 
     
     except Exception as e:
         print(e)
+        abort(500, str(e))
 
 
 
@@ -194,7 +201,7 @@ def write_bus_stop_data():
 
 
 
-@recom_bp.route('/bus_arr_info', methods=['POST'])
+@recom_bp.route('/busInfo', methods=['POST'])
 def fetch_bus_stop_info():
     '''
     json 형식 
@@ -214,15 +221,25 @@ def fetch_bus_stop_info():
     ]
     '''
     data = request.json
+
+    # print(data)
+    
+    buses = data.get('buses')
+    busStations = data.get('busStations')
     spot_lat = data.get('lat') # 이름 보고 바꿔야함.
     spot_lng = data.get('lng') # 이름 보고 바꿔야함.
-    bus_stop_datas = get_all_bus_stops_from_database(mysql) # 모든 버스정류장 데이터를 불러옴
-    bus_data_set = get_all_low_floor_bus_from_database(mysql) # 모든 버스 데이터를 불러옴
+
+    bus_stop_datas = json.loads(busStations) # {'id': 5381, 'busId': 82190, 'busName': '군인아파트', 'busLat': 36.410587, 'busLng': 127.33727} busId가 정류장 이름.
+    buses = json.loads(buses) # {'id': 2714, 'busNumPad': '충북70자7013'}
+    spot_lat = json.loads(spot_lat) # 36.314535529385
+    spot_lng = json.loads(spot_lng) # 127.38279265779
+
+    bus_data_set = { item.get('busNumPad') for item in buses}
     arr_datas = []
     
     bus_stop_within_500m = []
     for bus_stop in bus_stop_datas:
-        bus_stop_coor = (bus_stop['lat'], bus_stop['lng']) # 바뀔 수 있음.
+        bus_stop_coor = (bus_stop['busLat'], bus_stop['busLng']) # 바뀔 수 있음.
         spot_coor = (spot_lat, spot_lng)
         
         haversine_dist = haversine(bus_stop_coor, spot_coor, unit='m')
@@ -235,7 +252,11 @@ def fetch_bus_stop_info():
         arrival_data = reformat_arrival_data(bus_stop_data, bus_data_set)
         arr_datas.append(arrival_data)
     
+    # print(arr_datas)
+    result = json.dumps(arr_datas, ensure_ascii=False)
+
     return jsonify(arr_datas)
+    return result
 
 
 # @recom_bp.route('/migrate_bus_data', methods=['POST'])
@@ -251,6 +272,6 @@ app.register_blueprint(recom_bp)
 # 모든 host로부터의 요청 허용. 시스템 허용 옵션도 받는다.
 # terminal에서 export FLASK_RUN_HOST=0.0.0.0 으로 해야 설정이 먹는거 수정해야함.
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
 
