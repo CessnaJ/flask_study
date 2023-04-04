@@ -6,7 +6,7 @@
 '''
 from flask import Flask, request, redirect, jsonify, Blueprint, abort
 from flask_mysqldb import MySQL
-# import pymysql
+
 import json
 import ast
 from haversine import haversine
